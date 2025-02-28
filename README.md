@@ -143,10 +143,10 @@ WEBHOOK_SECRET=your-secret-key  # Generate a random string
 
   | Event | Target URL |
   |--------|------------|
-  | Post published | `https://your-site.netlify.app/.netlify/functions/handler?secret=your-secret-key` |
-  | Post updated | `https://your-site.netlify.app/.netlify/functions/handler?secret=your-secret-key` |
-  | Post deleted | `https://your-site.netlify.app/.netlify/functions/handler?secret=your-secret-key` |
-  | Post unpublished | `https://your-site.netlify.app/.netlify/functions/handler?secret=your-secret-key` |
+  | Post published | `https://your-site.netlify.app/.netlify/functions/handler` |
+  | Post updated | `https://your-site.netlify.app/.netlify/functions/handler` |
+  | Post deleted | `https://your-site.netlify.app/.netlify/functions/handler` |
+  | Post unpublished | `https://your-site.netlify.app/.netlify/functions/handler` |
 
 Now your search index will automatically update when you publish, update, or delete posts!
 
@@ -361,30 +361,6 @@ npm run build
 - Enable verbose logging in the CLI with the `--verbose` flag
 - Check browser console logs for frontend issues
 - Review Netlify function logs for webhook handler issues
-
-## 🔄 Compatibility
-
-### Ghost Versions
-
-This integration has been tested with:
-
-- Ghost v5.x (recommended)
-- Ghost v4.x
-- Ghost v3.x (limited support)
-
-### Meilisearch Versions
-
-Compatible with:
-
-- Meilisearch v1.x
-- Meilisearch v0.30.x and above
-
-### Browser Support
-
-The search UI supports:
-
-- Chrome, Firefox, Safari, Edge (latest 2 versions)
-- IE11 is not supported
 
 ## ⚡ Performance
 
