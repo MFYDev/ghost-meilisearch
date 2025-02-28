@@ -66,7 +66,7 @@
   "devDependencies": {
     "@tryghost/content-api": "^1.11.21",
     "axios": "^1.8.1",
-    "concurrently": "^8.2.2",
+    "concurrently": "^9.1.2",
     "eslint": "^9.21.0",
     "glob": "^11.0.1",
     "rimraf": "^6.0.1",
