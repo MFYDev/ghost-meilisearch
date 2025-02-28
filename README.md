@@ -276,72 +276,6 @@ ghost-meilisearch/
 └── scripts/                 # Build scripts
 ```
 
-### Setting Up the Development Environment
-
-1. Clone the repository:
-```bash
-git clone https://github.com/mfydev/ghost-meilisearch.git
-cd ghost-meilisearch
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Build the project:
-```bash
-npm run build
-```
-
-### Development Mode
-
-```bash
-npm run dev
-```
-
-This will start all packages in development mode with hot reloading.
-
-### Testing
-
-```bash
-npm run test
-```
-
-### Building for Production
-
-```bash
-npm run build
-```
-
-## 🔧 Troubleshooting
-
-### Common Issues
-
-#### Search UI Not Appearing
-
-- Check that the script is properly loaded in your site's header
-- Verify that your Meilisearch instance is accessible from the browser
-- Check browser console for any JavaScript errors
-
-#### Webhook Handler Not Updating Index
-
-- Verify that your Ghost webhooks are correctly configured
-- Check Netlify function logs for any errors
-- Ensure your Meilisearch API key has write permissions
-
-#### CLI Tool Errors
-
-- Verify your `config.json` has the correct format and values
-- Ensure your Ghost Content API key has the necessary permissions
-- Check that your Meilisearch instance is accessible from the CLI
-
-### Debugging
-
-- Enable verbose logging in the CLI with the `--verbose` flag
-- Check browser console logs for frontend issues
-- Review Netlify function logs for webhook handler issues
-
 ## ⚡ Performance
 
 ### Optimization Tips
@@ -350,14 +284,6 @@ npm run build
 - Consider hosting Meilisearch close to your Ghost instance to reduce latency
 - For large blogs (1000+ posts), increase the Meilisearch timeout in your config
 - Use the webhook handler to keep your index updated incrementally rather than full resyncs
-
-### Resource Requirements
-
-Meilisearch is designed to be lightweight:
-
-- Minimum: 1GB RAM, 1 CPU core
-- Recommended: 2GB RAM, 2 CPU cores
-- Storage: ~20% of your Ghost content database size
 
 ## 🔒 Security
 
