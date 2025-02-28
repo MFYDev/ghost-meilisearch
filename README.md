@@ -13,6 +13,21 @@ Add powerful, lightning-fast search to your Ghost blog with Meilisearch. This in
 - 🌗 **Dark/Light Modes**: Automatically matches your Ghost theme's color scheme
 - 🔐 **Secure**: Uses search-only API keys for frontend, admin keys for backend
 
+## Project Structure
+
+```
+ghost-meilisearch/
+├── apps/
+│   ├── cli/                 # CLI tool
+│   └── webhook-handler/     # Netlify function for webhook handling
+├── packages/
+│   ├── config/              # Configuration utilities
+│   ├── core/                # Core functionality
+│   └── search-ui/           # Search UI component
+├── public/                  # Built files for distribution
+└── scripts/                 # Build scripts
+```
+
 ## 🚀 Quick Start
 
 ### 1. Set Up Meilisearch
@@ -261,35 +276,7 @@ window.__MS_SEARCH_CONFIG__ = {
 };
 ```
 
-## 💻 Development
-
-### Project Structure
-
-```
-ghost-meilisearch/
-├── apps/
-│   ├── cli/                 # CLI tool
-│   └── webhook-handler/     # Netlify function for webhook handling
-├── packages/
-│   ├── config/              # Configuration utilities
-│   ├── core/                # Core functionality
-│   └── search-ui/           # Search UI component
-├── public/                  # Built files for distribution
-└── scripts/                 # Build scripts
-```
-
-## ⚡ Performance
-
-### Optimization Tips
-
-- Use a search-only API key with minimal permissions for the frontend
-- Consider hosting Meilisearch close to your Ghost instance to reduce latency
-- For large blogs (1000+ posts), increase the Meilisearch timeout in your config
-- Use the webhook handler to keep your index updated incrementally rather than full resyncs
-
 ## 🔒 Security
-
-### Best Practices
 
 - **Never** use your Meilisearch master key in the frontend
 - Create a search-only API key with minimal permissions for the frontend
