@@ -1,6 +1,6 @@
 import { Handler } from '@netlify/functions';
-import { loadConfig, validateConfig } from '@mfydev/ghost-meilisearch-config';
-import { GhostMeilisearchManager } from '@mfydev/ghost-meilisearch-core';
+import { loadConfig, validateConfig } from '@fanyangmeng/ghost-meilisearch-config';
+import { GhostMeilisearchManager } from '@fanyangmeng/ghost-meilisearch-core';
 import crypto from 'crypto';
 
 // Webhook payload interface - extended to be more flexible

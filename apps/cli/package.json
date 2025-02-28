@@ -1,5 +1,5 @@
 {
-  "name": "@mfydev/ghost-meilisearch-cli",
+  "name": "@fanyangmeng/ghost-meilisearch-cli",
   "version": "0.1.0",
   "description": "CLI tools for Ghost-Meilisearch integration",
   "main": "dist/index.js",
@@ -16,8 +16,8 @@
     "test": "jest"
   },
   "dependencies": {
-    "@mfydev/ghost-meilisearch-config": "file:../../packages/config",
-    "@mfydev/ghost-meilisearch-core": "file:../../packages/core",
+    "@fanyangmeng/ghost-meilisearch-config": "file:../../packages/config",
+    "@fanyangmeng/ghost-meilisearch-core": "file:../../packages/core",
     "chalk": "^5.3.0",
     "commander": "^11.1.0",
     "ora": "^7.0.1"

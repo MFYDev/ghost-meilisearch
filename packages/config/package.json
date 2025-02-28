@@ -1,5 +1,5 @@
 {
-  "name": "@mfydev/ghost-meilisearch-config",
+  "name": "@fanyangmeng/ghost-meilisearch-config",
   "version": "0.1.0",
   "description": "Configuration utilities for Ghost-Meilisearch integration",
   "main": "dist/index.js",

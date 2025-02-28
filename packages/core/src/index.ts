@@ -1,6 +1,6 @@
 import GhostContentAPI, { PostOrPage as GhostPost, BrowseResults } from '@tryghost/content-api';
 import { MeiliSearch, Index } from 'meilisearch';
-import { Config, IndexField } from '@mfydev/ghost-meilisearch-config';
+import { Config, IndexField } from '@fanyangmeng/ghost-meilisearch-config';
 
 export interface Post {
   id: string;

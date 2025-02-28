@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
 import { resolve } from 'path';
-import { loadConfig } from '@mfydev/ghost-meilisearch-config';
-import { GhostMeilisearchManager } from '@mfydev/ghost-meilisearch-core';
+import { loadConfig } from '@fanyangmeng/ghost-meilisearch-config';
+import { GhostMeilisearchManager } from '@fanyangmeng/ghost-meilisearch-core';
 import chalk from 'chalk';
 import ora from 'ora';
 

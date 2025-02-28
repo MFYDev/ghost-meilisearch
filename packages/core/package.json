@@ -1,5 +1,5 @@
 {
-  "name": "@mfydev/ghost-meilisearch-core",
+  "name": "@fanyangmeng/ghost-meilisearch-core",
   "version": "0.1.0",
   "description": "Core functionality for Ghost-Meilisearch integration",
   "main": "dist/index.js",
@@ -13,7 +13,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "@mfydev/ghost-meilisearch-config": "file:../config",
+    "@fanyangmeng/ghost-meilisearch-config": "file:../config",
     "@tryghost/content-api": "^1.11.20",
     "meilisearch": "^0.37.0"
   },

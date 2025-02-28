@@ -51,13 +51,13 @@ There are two ways to add search to your Ghost site:
 Add to your `config.[environment].json`:
 ```json
 "sodoSearch": {
-    "url": "https://unpkg.com/@mfydev/ghost-meilisearch-search-ui/dist/search.min.js"
+    "url": "https://cdn.jsdelivr.net/npm/@fanyangmeng/ghost-meilisearch-search-ui/dist/search.min.js"
 }
 ```
 
 Or set the environment variable:
 ```bash
-sodoSearch__url=https://unpkg.com/@mfydev/ghost-meilisearch-search-ui/dist/search.min.js
+sodoSearch__url=https://cdn.jsdelivr.net/npm/@fanyangmeng/ghost-meilisearch-search-ui/dist/search.min.js
 ```
 
 #### Option 2: Code Injection
@@ -65,7 +65,7 @@ sodoSearch__url=https://unpkg.com/@mfydev/ghost-meilisearch-search-ui/dist/searc
 If you're using a managed host like Ghost(Pro), add this to your site's code injection (Settings → Code injection → Site Header):
 
 ```html
-<script src="https://unpkg.com/@mfydev/ghost-meilisearch-search-ui/dist/search.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@fanyangmeng/ghost-meilisearch-search-ui/dist/search.min.js"></script>
 ```
 
 ### 3. Configure the Search UI
@@ -87,7 +87,7 @@ Add this to your site's header code injection:
 
 1. Install the CLI:
 ```bash
-npm install -g @mfydev/ghost-meilisearch-cli
+npm install -g @fanyangmeng/ghost-meilisearch-cli
 ```
 
 2. Create `config.json`:
@@ -170,7 +170,7 @@ services:
     # Your existing Ghost configuration
     environment:
       # Add this to use the search UI
-      - sodoSearch__url=https://unpkg.com/@mfydev/ghost-meilisearch-search-ui/dist/search.min.js
+      - sodoSearch__url=https://cdn.jsdelivr.net/npm/@fanyangmeng/ghost-meilisearch-search-ui/dist/search.min.js
       
   meilisearch:
     image: getmeili/meilisearch:latest
@@ -427,11 +427,11 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 | Package | Description |
 |---------|-------------|
-| [@mfydev/ghost-meilisearch-search-ui](packages/search-ui/README.md) | Search interface that matches your Ghost theme |
-| [@mfydev/ghost-meilisearch-cli](apps/cli/README.md) | CLI tool for content syncing |
-| [@mfydev/ghost-meilisearch-webhook-handler](apps/webhook-handler/README.md) | Webhook handler for real-time updates |
-| [@mfydev/ghost-meilisearch-config](packages/config/README.md) | Configuration utilities |
-| [@mfydev/ghost-meilisearch-core](packages/core/README.md) | Core functionality |
+| [@fanyangmeng/ghost-meilisearch-search-ui](packages/search-ui/README.md) | Search interface that matches your Ghost theme |
+| [@fanyangmeng/ghost-meilisearch-cli](apps/cli/README.md) | CLI tool for content syncing |
+| [@fanyangmeng/ghost-meilisearch-webhook-handler](apps/webhook-handler/README.md) | Webhook handler for real-time updates |
+| [@fanyangmeng/ghost-meilisearch-config](packages/config/README.md) | Configuration utilities |
+| [@fanyangmeng/ghost-meilisearch-core](packages/core/README.md) | Core functionality |
 
 ## 📄 License
 

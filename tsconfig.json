@@ -12,9 +12,9 @@
     "outDir": "dist",
     "baseUrl": ".",
     "paths": {
-      "@mfydev/ghost-meilisearch-config": ["packages/config/src"],
-      "@mfydev/ghost-meilisearch-core": ["packages/core/src"],
-      "@mfydev/ghost-meilisearch-search-ui": ["packages/search-ui/src"]
+      "@fanyangmeng/ghost-meilisearch-config": ["packages/config/src"],
+      "@fanyangmeng/ghost-meilisearch-core": ["packages/core/src"],
+      "@fanyangmeng/ghost-meilisearch-search-ui": ["packages/search-ui/src"]
     }
   },
   "exclude": ["node_modules", "dist"]
