@@ -147,16 +147,24 @@ function verifyWebhookSignature(signature: string, body: string, secret: string)
     console.log('Verifying webhook signature...');
     // Ghost signature format is "sha256=hash, t=timestamp"
     const [signaturePart, timestampPart] = signature.split(', ');
-    const timestamp = timestampPart.split('=')[1];
-    const providedSignature = signaturePart.split('=')[1];
+    const [, providedSignature] = signaturePart.split('=');
+    const [, timestamp] = timestampPart.split('=');
+
+    // Create message by combining stringified body and timestamp
+    const message = `${body}${timestamp}`;
     
-    // Create HMAC using the timestamp and request body
+    // Create HMAC using the secret and message
     const hmac = crypto.createHmac('sha256', secret);
-    hmac.update(timestamp + body);
+    hmac.update(message);
     const computedSignature = hmac.digest('hex');
     
     const isValid = providedSignature === computedSignature;
     console.log(`Signature verification ${isValid ? 'succeeded' : 'failed'}`);
+    console.log('Debug info:', {
+      providedSignature,
+      computedSignature,
+      timestamp
+    });
     return isValid;
   } catch (error) {
     console.error('Error verifying signature:', error);
