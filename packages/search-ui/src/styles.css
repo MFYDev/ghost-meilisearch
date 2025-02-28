@@ -1,0 +1,622 @@
+/* Ghost Meilisearch Search UI Styles */
+
+:root {
+  /* Color system */
+  --color-base-50: 255 255 255;
+  --color-base-100: 250 250 250;
+  --color-base-200: 229 231 235;
+  --color-base-300: 209 213 219;
+  --color-base-700: 55 65 81;
+  --color-base-800: 31 41 55;
+  --color-base-900: 17 24 39;
+  --color-base-950: 3 7 18;
+
+  /* Animation configs */
+  --transition-base: 80ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-smooth: 120ms cubic-bezier(0.4, 0, 0.2, 1);
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+/* Light theme */
+#ms-search-wrapper.light {
+  --ms-search-bg: rgb(252, 252, 252);
+  --ms-search-text: rgb(23, 23, 23);
+  --ms-search-border: rgba(0, 0, 0, 0.08);
+  --ms-search-shadow: rgba(0, 0, 0, 0.1);
+  --ms-search-placeholder: rgb(82, 82, 82);
+  --ms-search-highlight: var(--ghost-accent-color, #6366f1);
+  --ms-search-result-bg: rgb(252, 252, 252);
+  --ms-search-result-hover: color-mix(in srgb, var(--ms-search-highlight) 8%, transparent);
+  --ms-search-result-border: rgba(0, 0, 0, 0.08);
+  --ms-search-result-text: rgb(23, 23, 23);
+  --ms-search-result-excerpt: rgb(82, 82, 82);
+  --ms-search-kbd-bg: rgb(250, 250, 250);
+  --ms-search-kbd-border: rgba(0, 0, 0, 0.08);
+  --ms-search-kbd-text: rgb(82, 82, 82);
+  --ms-search-backdrop: rgba(0, 0, 0, 0.15);
+  --ms-search-z-index: 9999997;
+  --ms-search-mobile-z-index: 9999999;
+  --ms-search-highlight-hover: color-mix(in srgb, black 15%, var(--ms-search-highlight));
+  --ms-search-surface-elevated: rgb(255, 255, 255);
+  --ms-search-surface-hover: rgba(0, 0, 0, 0.04);
+  z-index: 9999999;
+}
+
+#ms-search-wrapper.light .ms-close-button:hover {
+  background: var(--ms-search-surface-hover);
+  color: var(--ms-search-text);
+  border-color: var(--ms-search-highlight);
+  opacity: 1;
+}
+
+/* Dark theme */
+#ms-search-wrapper.dark {
+  --ms-search-bg: rgb(32, 32, 32);
+  --ms-search-text: rgb(250, 250, 250);
+  --ms-search-border: rgba(255, 255, 255, 0.08);
+  --ms-search-shadow: rgba(0, 0, 0, 0.3);
+  --ms-search-placeholder: rgb(161, 161, 161);
+  --ms-search-highlight: var(--ghost-accent-color, #818cf8);
+  --ms-search-result-bg: rgb(38, 38, 38);
+  --ms-search-result-hover: color-mix(in srgb, var(--ms-search-highlight) 8%, transparent);
+  --ms-search-result-border: rgba(255, 255, 255, 0.08);
+  --ms-search-result-text: rgb(250, 250, 250);
+  --ms-search-result-excerpt: rgb(161, 161, 161);
+  --ms-search-kbd-bg: rgb(45, 45, 45);
+  --ms-search-kbd-border: rgba(255, 255, 255, 0.08);
+  --ms-search-kbd-text: rgb(161, 161, 161);
+  --ms-search-backdrop: rgba(0, 0, 0, 0.4);
+  --ms-search-highlight-hover: color-mix(in srgb, white 15%, var(--ms-search-highlight));
+  --ms-search-surface-elevated: rgb(45, 45, 45);
+  --ms-search-surface-hover: rgba(255, 255, 255, 0.04);
+  z-index: 9999999;
+}
+
+/* Default to light mode if no class is provided */
+#ms-search-wrapper:not(.light):not(.dark) {
+  --ms-search-bg: rgb(252, 252, 252);
+  --ms-search-text: rgb(23, 23, 23);
+  --ms-search-border: rgba(0, 0, 0, 0.08);
+  --ms-search-shadow: rgba(0, 0, 0, 0.1);
+  --ms-search-placeholder: rgb(82, 82, 82);
+  --ms-search-highlight: var(--ghost-accent-color, #6366f1);
+  --ms-search-result-bg: rgb(252, 252, 252);
+  --ms-search-result-hover: color-mix(in srgb, var(--ms-search-highlight) 8%, transparent);
+  --ms-search-result-border: rgba(0, 0, 0, 0.08);
+  --ms-search-result-text: rgb(23, 23, 23);
+  --ms-search-result-excerpt: rgb(82, 82, 82);
+  --ms-search-kbd-bg: rgb(250, 250, 250);
+  --ms-search-kbd-border: rgba(0, 0, 0, 0.08);
+  --ms-search-kbd-text: rgb(82, 82, 82);
+  --ms-search-backdrop: rgba(0, 0, 0, 0.15);
+  --ms-search-z-index: 9999997;
+  --ms-search-mobile-z-index: 9999999;
+  --ms-search-highlight-hover: color-mix(in srgb, black 15%, var(--ms-search-highlight));
+  --ms-search-surface-elevated: rgb(255, 255, 255);
+  --ms-search-surface-hover: rgba(0, 0, 0, 0.04);
+}
+
+#ms-search-wrapper {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--ms-search-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: none;
+  background-color: var(--ms-search-backdrop);
+  backdrop-filter: blur(4px);
+  align-items: flex-start;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  z-index: 9999999;
+  pointer-events: none;
+}
+
+/* Show wrapper when modal is visible */
+#ms-search-wrapper:has(#ms-search-modal:not(.hidden)) {
+  display: flex;
+  pointer-events: auto;
+}
+
+/* Fallback for browsers that don't support :has() */
+#ms-search-modal:not(.hidden) {
+  display: flex;
+}
+
+#ms-search-modal:not(.hidden) ~ #ms-search-wrapper {
+  display: flex;
+  pointer-events: auto;
+}
+
+@media (min-width: 640px) {
+  #ms-search-wrapper {
+    z-index: var(--ms-search-z-index);
+  }
+}
+
+#ms-search-wrapper * {
+  box-sizing: border-box;
+}
+
+#ms-search-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999998;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 0;
+}
+
+@media (min-width: 640px) {
+  #ms-search-modal {
+    padding-top: 10vh;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+.ms-backdrop {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  backdrop-filter: blur(4px);
+  background: var(--ms-search-backdrop);
+  transition: opacity var(--transition-smooth);
+  z-index: 9999996;
+}
+
+.ms-modal-container {
+  position: relative;
+  z-index: 9999999;
+  width: 100%;
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.1s ease-out;
+}
+
+@media (min-width: 640px) {
+  .ms-modal-container {
+    padding: 1.25rem;
+    height: auto;
+    max-height: 60vh;
+    min-height: 20vh;
+    margin: 0 auto;
+    max-width: 600px;
+  }
+}
+
+.ms-modal-content {
+  background: var(--ms-search-bg);
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: hidden;
+  width: 100%;
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  max-height: 100%;
+}
+
+@media (min-width: 640px) {
+  .ms-modal-content {
+    border: 1px solid var(--ms-search-border);
+    border-radius: 0.75rem;
+    box-shadow: var(--shadow-lg);
+  }
+}
+
+.ms-close-button {
+  position: fixed;
+  top: 1.25rem;
+  right: 1.5rem;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+  border: 1px solid var(--ms-search-border);
+  background: var(--ms-search-surface-elevated);
+  color: var(--ms-search-text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-base);
+  font-size: 1.25rem;
+  line-height: 1;
+  z-index: 10000000;
+  padding: 0;
+  opacity: 0.8;
+}
+
+@media (max-width: 640px) {
+  .ms-close-button {
+    top: 1rem;
+    right: 1rem;
+    width: 2rem;
+    height: 2rem;
+    font-size: 1.25rem;
+    position: absolute; /* Change from fixed to absolute */
+    z-index: 10000000;
+  }
+  
+  .ms-search-header {
+    padding-right: 3.5rem; /* Add right padding to make space for the close button */
+  }
+}
+
+
+/* Ensure the hover color uses the correct variable */
+.ms-close-button:hover {
+  background: var(--ms-search-surface-hover);
+  border-color: var(--ms-search-highlight);
+  color: var(--ms-search-text); /* Use the correct text color variable */
+  opacity: 1;
+}
+
+.ms-close-button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ms-search-bg), 0 0 0 4px var(--ms-search-highlight);
+  border-color: var(--ms-search-highlight);
+}
+
+.ms-search-header {
+  border-bottom: 1px solid var(--ms-search-border);
+  padding: 0.75rem 1.25rem;
+  position: relative;
+  background: var(--ms-search-surface-elevated);
+}
+
+@media (min-width: 640px) {
+  .ms-search-header {
+    padding: 0.875rem 1.5rem;
+  }
+}
+
+.ms-search-header:before {
+  content: "";
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='2' stroke='rgb(55, 65, 81)'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z' /%3E%3C/svg%3E");
+  height: 1.125rem;
+  width: 1.125rem;
+  position: absolute;
+  left: 2rem;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0.7;
+  color: var(--ms-search-text);
+  pointer-events: none;
+  z-index: 1;
+  transition: opacity var(--transition-base);
+}
+
+.dark .ms-search-header:before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='2' stroke='rgb(209, 213, 219)'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z' /%3E%3C/svg%3E");
+}
+
+.ms-search-input {
+  -webkit-appearance: none;
+  background: var(--ms-search-bg);
+  border-radius: 0.75rem;
+  border: 1px solid var(--ms-search-border);
+  box-shadow: var(--shadow-sm);
+  color: var(--ms-search-text);
+  font-size: 1rem;
+  height: 2.75rem;
+  outline: none;
+  padding: 0.75rem 0.75rem 0.75rem 2.75rem;
+  width: 100%;
+  transition: all var(--transition-smooth);
+  letter-spacing: -0.011em;
+}
+
+/* Hide the search clear button */
+.ms-search-input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .ms-search-input {
+    font-size: 1.125rem;
+    height: 3rem;
+    padding: 0.875rem 0.875rem 0.875rem 2.75rem;
+  }
+}
+
+.ms-search-input:focus,
+.ms-search-input:focus-visible {
+  background: var(--ms-search-bg);
+  outline: none;
+  border-color: var(--ms-search-highlight);
+  box-shadow: 0 0 0 1px var(--ms-search-highlight);
+}
+
+.ms-search-input::placeholder {
+  color: var(--ms-search-placeholder);
+  opacity: 0.7;
+}
+
+.ms-keyboard-hints {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  font-size: 0.75rem;
+  gap: 0.75rem;
+  color: var(--ms-search-placeholder);
+  white-space: nowrap;
+  user-select: none;
+  padding: 0.5rem 1.25rem;
+  border-bottom: 1px solid var(--ms-search-border);
+  background-color: var(--ms-search-surface-elevated);
+}
+
+@media (min-width: 640px) {
+  .ms-keyboard-hints {
+    padding: 0.5rem 1.5rem;
+  }
+}
+
+.ms-kbd {
+  background: var(--ms-search-kbd-bg);
+  border: 1px solid var(--ms-search-kbd-border);
+  border-radius: 0.375rem;
+  color: var(--ms-search-kbd-text);
+  font-size: 0.75rem;
+  padding: 0.25rem 0.35rem;
+  box-shadow: var(--shadow-sm);
+  font-weight: 500;
+  margin: 0 0.25rem;
+}
+
+.ms-results-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.75rem calc(1.5rem - 6px) 0.75rem 1.5rem;
+  scroll-behavior: smooth;
+  min-height: 0;
+  overscroll-behavior: contain;
+  position: relative;
+  -webkit-overflow-scrolling: touch;
+}
+
+.ms-results-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.ms-results-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ms-results-container::-webkit-scrollbar-thumb {
+  background: var(--ms-search-border);
+  border-radius: 3px;
+}
+
+.ms-results-container > :last-child {
+  margin-bottom: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .ms-results-container {
+    height: auto;
+    max-height: calc(60vh - 7.5rem);
+    padding-bottom: 1rem;
+  }
+}
+
+.ms-common-searches {
+  padding: 0.75rem 0;
+  padding-right: 6px;
+  margin: 0 0 1rem 0;
+}
+
+.ms-common-searches.hidden {
+  display: none;
+}
+
+.ms-common-searches-title {
+  color: var(--ms-search-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  margin: 0 0 0.75rem;
+  text-transform: uppercase;
+}
+
+.ms-common-search-btn {
+  background: transparent;
+  border: none;
+  color: var(--ms-search-text);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  text-decoration: none;
+  transition: all var(--transition-base);
+  font-size: 0.875rem;
+  margin: 0 0.5rem 0.5rem 0;
+  border: 1px solid var(--ms-search-border);
+}
+
+.ms-common-search-btn:hover {
+  background: var(--ms-search-result-hover);
+  border-color: var(--ms-search-highlight);
+}
+
+.ms-hits-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.ms-result-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  padding: 0;
+  margin-bottom: 0.75rem;
+  transition: all var(--transition-base);
+}
+
+.ms-result-item {
+  border-radius: 0.75rem;
+  padding: 1rem;
+  border: 1px solid transparent;
+  transition: background-color var(--transition-base), transform var(--transition-base);
+  background: var(--ms-search-result-bg);
+}
+
+.ms-result-link:hover .ms-result-item,
+.ms-result-link.ms-selected .ms-result-item {
+  background: var(--ms-search-result-hover);
+  border-color: var(--ms-search-highlight);
+  transform: translateX(2px);
+}
+
+.ms-result-title {
+  color: var(--ms-search-highlight);
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 0 0 0.5rem;
+  word-break: break-word;
+  transition: color var(--transition-base);
+}
+
+.ms-result-excerpt {
+  color: var(--ms-search-result-excerpt);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  margin: 0;
+  word-break: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.ms-result-link em {
+  font-style: normal;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--ms-search-highlight) 15%, transparent);
+  color: color-mix(in srgb, var(--ms-search-highlight) 85%, var(--ms-search-text));
+}
+
+.ms-loading-state {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.25rem;
+  text-align: center;
+  color: var(--ms-search-placeholder);
+}
+
+.ms-loading-state.active {
+  display: flex;
+  flex-direction: column;
+}
+
+.ms-loading-spinner {
+  display: inline-block;
+  width: 2rem;
+  height: 2rem;
+  margin-bottom: 1rem;
+  border: 2px solid var(--ms-search-border);
+  border-top-color: var(--ms-search-highlight);
+  border-radius: 50%;
+  animation: ms-spin 0.8s linear infinite;
+}
+
+@keyframes ms-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ms-empty-state {
+  display: none;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  color: var(--ms-search-placeholder);
+}
+
+.ms-empty-state.active {
+  display: block;
+}
+
+.ms-empty-message {
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+  .ms-modal-content {
+    margin-top: 0;
+    border-radius: 0;
+    height: 100vh;
+  }
+
+  .ms-modal-container {
+    padding: 0;
+    margin: 0;
+  }
+
+  .ms-results-container {
+    padding-bottom: 1.5rem;
+    max-height: calc(100vh - 7rem);
+  }
+  
+  .ms-close-button {
+    top: 1rem;
+    right: 1rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1.5rem;
+    position: fixed;
+  }
+  
+  .ms-search-header {
+    padding: 1rem 1.5rem;
+  }
+  
+  .ms-search-input {
+    font-size: 1rem;
+    height: 2.75rem;
+    padding: 0.75rem 0.75rem 0.75rem 2.75rem;
+    width: 88%;
+  }
+  
+  .ms-search-header:before {
+    height: 1.125rem;
+    width: 1.125rem;
+    left: 2rem;
+  }
+  
+  .ms-keyboard-hints {
+    padding: 0.35rem 1.25rem;
+  }
+}
+
+.hidden {
+  display: none !important;
+}

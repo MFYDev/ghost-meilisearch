@@ -1,0 +1,26 @@
+{
+  "name": "@mfydev/ghost-meilisearch-search-ui",
+  "version": "0.1.0",
+  "description": "Search UI for Ghost-Meilisearch integration",
+  "main": "dist/search.js",
+  "type": "module",
+  "scripts": {
+    "build": "rollup -c",
+    "clean": "rimraf dist",
+    "dev": "rollup -c -w",
+    "lint": "eslint src --ext .js"
+  },
+  "dependencies": {
+    "meilisearch": "^0.37.0"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^25.0.7",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-terser": "^0.4.4",
+    "eslint": "^8.56.0",
+    "postcss": "^8.4.35",
+    "rimraf": "^5.0.5",
+    "rollup": "^4.9.6",
+    "rollup-plugin-postcss": "^4.0.2"
+  }
+}

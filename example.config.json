@@ -1,0 +1,98 @@
+{
+  "ghost": {
+    "url": "https://www.example.com",
+    "key": "abcdefghijklmnopqrstuvwxyz1234567890",
+    "version": "v5.0"
+  },
+  "meilisearch": {
+    "host": "http://localhost:7700",
+    "apiKey": "example-api-key",
+    "timeout": 5000
+  },
+  "index": {
+    "name": "ghost_posts",
+    "primaryKey": "id",
+    "fields": [
+      {
+        "name": "id",
+        "type": "string",
+        "searchable": false,
+        "filterable": true,
+        "sortable": false,
+        "displayed": true
+      },
+      {
+        "name": "title",
+        "type": "string",
+        "searchable": true,
+        "filterable": false,
+        "sortable": true,
+        "displayed": true
+      },
+      {
+        "name": "slug",
+        "type": "string",
+        "searchable": true,
+        "filterable": false,
+        "sortable": false,
+        "displayed": true
+      },
+      {
+        "name": "html",
+        "type": "string",
+        "searchable": true,
+        "filterable": false,
+        "sortable": false,
+        "displayed": true
+      },
+      {
+        "name": "excerpt",
+        "type": "string",
+        "searchable": true,
+        "filterable": false,
+        "sortable": false,
+        "displayed": true
+      },
+      {
+        "name": "feature_image",
+        "type": "string",
+        "searchable": false,
+        "filterable": false,
+        "sortable": false,
+        "displayed": true
+      },
+      {
+        "name": "published_at",
+        "type": "date",
+        "searchable": false,
+        "filterable": true,
+        "sortable": true,
+        "displayed": true
+      },
+      {
+        "name": "updated_at",
+        "type": "date",
+        "searchable": false,
+        "filterable": true,
+        "sortable": true,
+        "displayed": true
+      },
+      {
+        "name": "tags",
+        "type": "string[]",
+        "searchable": true,
+        "filterable": true,
+        "sortable": false,
+        "displayed": true
+      },
+      {
+        "name": "authors",
+        "type": "string[]",
+        "searchable": true,
+        "filterable": true,
+        "sortable": false,
+        "displayed": true
+      }
+    ]
+  }
+}

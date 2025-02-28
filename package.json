@@ -1,0 +1,73 @@
+{
+  "name": "@mfydev/ghost-meilisearch",
+  "version": "0.1.0",
+  "description": "Meilisearch integration for Ghost CMS",
+  "main": "dist/index.js",
+  "type": "module",
+  "bin": {
+    "ghost-meilisearch": "./apps/cli/dist/index.js"
+  },
+  "scripts": {
+    "build": "node scripts/ensure-public-dir.js && npm run build:all",
+    "build:all": "npm run build:config && npm run build:core && npm run build:cli && npm run build:webhook && npm run build:search-ui",
+    "build:config": "cd packages/config && npm run build",
+    "build:core": "cd packages/core && npm run build",
+    "build:cli": "cd apps/cli && npm run build",
+    "build:webhook": "cd apps/webhook-handler && npm run build",
+    "build:search-ui": "cd packages/search-ui && npm run build",
+    "clean": "npm run clean:all",
+    "clean:all": "npm run clean:config && npm run clean:core && npm run clean:cli && npm run clean:webhook && npm run clean:search-ui",
+    "clean:config": "cd packages/config && npm run clean",
+    "clean:core": "cd packages/core && npm run clean",
+    "clean:cli": "cd apps/cli && npm run clean",
+    "clean:webhook": "cd apps/webhook-handler && npm run clean",
+    "clean:search-ui": "cd packages/search-ui && npm run clean",
+    "dev": "npm run dev:all",
+    "dev:all": "concurrently \"npm run dev:config\" \"npm run dev:core\" \"npm run dev:cli\" \"npm run dev:webhook\" \"npm run dev:search-ui\"",
+    "dev:config": "cd packages/config && npm run dev",
+    "dev:core": "cd packages/core && npm run dev",
+    "dev:cli": "cd apps/cli && npm run dev",
+    "dev:webhook": "cd apps/webhook-handler && npm run dev",
+    "dev:search-ui": "cd packages/search-ui && npm run dev",
+    "lint": "npm run lint:all",
+    "lint:all": "npm run lint:config && npm run lint:core && npm run lint:cli && npm run lint:webhook && npm run lint:search-ui",
+    "lint:config": "cd packages/config && npm run lint",
+    "lint:core": "cd packages/core && npm run lint",
+    "lint:cli": "cd apps/cli && npm run lint",
+    "lint:webhook": "cd apps/webhook-handler && npm run lint",
+    "lint:search-ui": "cd packages/search-ui && npm run lint",
+    "test": "npm run test:all",
+    "test:all": "npm run test:config && npm run test:core && npm run test:cli && npm run test:webhook",
+    "test:config": "cd packages/config && npm run test",
+    "test:core": "cd packages/core && npm run test",
+    "test:cli": "cd apps/cli && npm run test",
+    "test:webhook": "cd apps/webhook-handler && npm run test",
+    "postbuild": "cp -r packages/search-ui/dist/* public/"
+  },
+  "files": [
+    "dist",
+    "public"
+  ],
+  "keywords": [
+    "ghost",
+    "meilisearch",
+    "search",
+    "cms"
+  ],
+  "author": "Fanyang Meng",
+  "license": "MIT",
+  "dependencies": {
+    "@mfydev/ghost-meilisearch-cli": "file:apps/cli",
+    "@mfydev/ghost-meilisearch-config": "file:packages/config",
+    "@mfydev/ghost-meilisearch-core": "file:packages/core",
+    "@mfydev/ghost-meilisearch-search-ui": "file:packages/search-ui",
+    "@mfydev/ghost-meilisearch-webhook-handler": "file:apps/webhook-handler"
+  },
+  "devDependencies": {
+    "@tryghost/content-api": "^1.11.21",
+    "axios": "^1.8.1",
+    "concurrently": "^8.2.2",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.3.3"
+  }
+}

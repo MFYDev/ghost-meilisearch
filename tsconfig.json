@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "esModuleInterop": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "sourceMap": true,
+    "outDir": "dist",
+    "baseUrl": ".",
+    "paths": {
+      "@mfydev/ghost-meilisearch-config": ["packages/config/src"],
+      "@mfydev/ghost-meilisearch-core": ["packages/core/src"],
+      "@mfydev/ghost-meilisearch-search-ui": ["packages/search-ui/src"]
+    }
+  },
+  "exclude": ["node_modules", "dist"]
+}
