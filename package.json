@@ -67,7 +67,9 @@
     "@tryghost/content-api": "^1.11.21",
     "axios": "^1.8.1",
     "concurrently": "^8.2.2",
-    "rimraf": "^5.0.5",
+    "eslint": "^9.21.0",
+    "glob": "^11.0.1",
+    "rimraf": "^6.0.1",
     "typescript": "^5.3.3"
   }
 }
