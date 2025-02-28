@@ -1,13 +1,5 @@
 # Ghost Meilisearch Integration
 
-<div align="center">
-
-![Ghost + Meilisearch](https://img.shields.io/badge/Ghost%20%2B%20Meilisearch-Integration-738A94?style=for-the-badge)
-[![MIT License](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-0.1.0-green.svg?style=flat-square)](package.json)
-
-</div>
-
 Add powerful, lightning-fast search to your Ghost blog with Meilisearch. This integration provides everything you need to create a seamless search experience for your readers.
 
 ## ✨ Features
@@ -18,20 +10,6 @@ Add powerful, lightning-fast search to your Ghost blog with Meilisearch. This in
 - 🪝 **Real-time Updates**: Keep your search index in sync with your content via webhooks
 - 🌗 **Dark/Light Modes**: Automatically matches your Ghost theme's color scheme
 - 🔐 **Secure**: Uses search-only API keys for frontend, admin keys for backend
-
-## 📋 Table of Contents
-
-- [Quick Start](#-quick-start)
-- [Installation Options](#-installation-options)
-- [Configuration](#-configuration)
-- [Advanced Usage](#-advanced-usage)
-- [Development](#-development)
-- [Troubleshooting](#-troubleshooting)
-- [Compatibility](#-compatibility)
-- [Performance](#-performance)
-- [Security](#-security)
-- [Contributing](#-contributing)
-- [License](#-license)
 
 ## 🚀 Quick Start
 
@@ -73,6 +51,8 @@ If you're using a managed host like Ghost(Pro), add this to your site's code inj
 Add this to your site's header code injection:
 
 ```html
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@fanyangmeng/ghost-meilisearch-search-ui/dist/styles.css">
+
 <script>
   window.__MS_SEARCH_CONFIG__ = {
     meilisearchHost: "https://your-meilisearch-host.com",
