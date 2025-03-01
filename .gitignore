@@ -6,9 +6,6 @@ node_modules/
 # Build outputs
 dist/
 build/
-public/search.js
-public/search.min.js
-public/styles.css
 *.tsbuildinfo
 
 # Testing
