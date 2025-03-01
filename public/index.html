@@ -207,15 +207,14 @@
   </main>
   
   <script>
-    // Meilisearch configuration for demo
     window.__MS_SEARCH_CONFIG__ = {
-      meilisearchHost: "http://localhost:7700",
-      meilisearchApiKey: "",
+      meilisearchHost: "https://meilisearch.fanyangmeng.blog/",
+      meilisearchApiKey: "2f7dda2f9e23c3a842ecde52401cb088d76d0f6bae28b523b9717f293705aaa6",
       indexName: "ghost_posts",
-      theme: "system",
-      commonSearches: ["getting started", "tutorial", "guide"]
+      theme: "system"  // Optional: 'light', 'dark', or 'system'
     };
   </script>
-  <script src="search.js"></script>
+  <script src="search.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="styles.css">
 </body>
 </html>
