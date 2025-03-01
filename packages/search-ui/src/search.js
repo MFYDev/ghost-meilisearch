@@ -359,6 +359,15 @@ class GhostMeilisearchSearch {
     this.modal.classList.remove('hidden');
     this.searchInput.focus();
     
+    // Check if search input is empty and hide elements if needed
+    if (this.state.query.trim() === '') {
+      this.modal.querySelector('.ms-keyboard-hints').classList.add('hidden');
+      this.modal.querySelector('.ms-results-container').classList.add('ms-results-empty');
+    } else {
+      this.modal.querySelector('.ms-keyboard-hints').classList.remove('hidden');
+      this.modal.querySelector('.ms-results-container').classList.remove('ms-results-empty');
+    }
+    
     // Prevent body scrolling
     document.body.style.overflow = 'hidden';
     
@@ -393,9 +402,18 @@ class GhostMeilisearchSearch {
       this.loadingState.classList.remove('active');
       this.emptyState.classList.remove('active');
       this.state.results = [];
+
+      // Hide keyboard hints and results container when search is empty
+      this.modal.querySelector('.ms-keyboard-hints').classList.add('hidden');
+      this.modal.querySelector('.ms-results-container').classList.add('ms-results-empty');
+
       return;
     } else {
       this.commonSearchesSection.classList.add('hidden');
+
+      // Show keyboard hints and results container when search has content
+      this.modal.querySelector('.ms-keyboard-hints').classList.remove('hidden');
+      this.modal.querySelector('.ms-results-container').classList.remove('ms-results-empty');
     }
 
     // Set loading state

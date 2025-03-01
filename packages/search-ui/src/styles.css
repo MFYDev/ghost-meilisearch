@@ -620,3 +620,25 @@
 .hidden {
   display: none !important;
 }
+
+/* Hide results container when empty */
+.ms-results-empty {
+  display: none !important;
+}
+
+/* When keyboard hints are hidden, adjust padding/margin to prevent empty space */
+.ms-keyboard-hints.hidden + .ms-results-container {
+  padding-top: 0;
+}
+
+/* When common searches are shown and results are hidden, maintain proper spacing */
+.ms-common-searches:not(.hidden) {
+  margin-bottom: 0;
+}
+
+/* Ensure modal has proper minimum height even when elements are hidden */
+@media (min-width: 640px) {
+  .ms-modal-container:has(.ms-results-container.ms-results-empty) {
+    min-height: auto;
+  }
+}
