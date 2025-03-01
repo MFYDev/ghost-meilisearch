@@ -49,7 +49,7 @@ function determineEventType(payload: WebhookPayload): string {
     const previous = post.previous;
 
     // Post is published and public
-    if (current.status === 'published' && current.visibility === 'public') {
+    if (current && current.status === 'published' && current.visibility === 'public') {
       // If it was previously not published or not public, it's a publication
       if (!previous || previous.status !== 'published' || previous.visibility !== 'public') {
         return 'post.published';
@@ -60,7 +60,7 @@ function determineEventType(payload: WebhookPayload): string {
 
     // Post was published but is now unpublished
     if (previous && previous.status === 'published' && previous.visibility === 'public' &&
-        (current.status !== 'published' || current.visibility !== 'public')) {
+        current && (current.status !== 'published' || current.visibility !== 'public')) {
       return 'post.unpublished';
     }
 
@@ -124,6 +124,11 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number, operation: strin
   });
   
   return Promise.race([promise, timeoutPromise]);
+}
+
+// Check if a post is published and public
+function isPublishedAndPublic(postData: { status?: string; visibility?: string } | undefined): boolean {
+  return !!postData && postData.status === 'published' && postData.visibility === 'public';
 }
 
 // Netlify function handler
@@ -213,9 +218,7 @@ export const handler: Handler = async (event, context) => {
 
     // Handle different event types
     if (webhookEventType === 'post.published' || 
-        (webhookEventType === 'post.updated' && 
-         payload.post?.current?.status === 'published' && 
-         payload.post?.current?.visibility === 'public')) {
+        (webhookEventType === 'post.updated' && isPublishedAndPublic(payload.post?.current))) {
       
       // Index the post
       await withTimeout(
@@ -227,9 +230,7 @@ export const handler: Handler = async (event, context) => {
     } else if (webhookEventType === 'post.deleted' || 
                webhookEventType === 'post.unpublished' ||
                (payload.post?.previous?.id && (!payload.post?.current || Object.keys(payload.post.current).length === 0)) ||
-               (payload.post?.current && 
-                (payload.post.current.status !== 'published' || 
-                 payload.post.current.visibility !== 'public'))) {
+               (payload.post?.current && !isPublishedAndPublic(payload.post.current))) {
       
       // Delete the post from the index
       await withTimeout(
