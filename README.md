@@ -46,13 +46,13 @@ There are two ways to add search to your Ghost site:
 Add to your `config.[environment].json`:
 ```json
 "sodoSearch": {
-    "url": "https://cdn.jsdelivr.net/npm/@fanyangmeng/ghost-meilisearch-search-ui@0.1.2/dist/search.min.js"
+    "url": "https://cdn.jsdelivr.net/npm/@fanyangmeng/ghost-meilisearch-search-ui@0.1.3/dist/search.min.js"
 }
 ```
 
 Or set the environment variable:
 ```bash
-sodoSearch__url=https://cdn.jsdelivr.net/npm/@fanyangmeng/ghost-meilisearch-search-ui@0.1.2/dist/search.min.js
+sodoSearch__url=https://cdn.jsdelivr.net/npm/@fanyangmeng/ghost-meilisearch-search-ui@0.1.3/dist/search.min.js
 ```
 
 #### Option 2: Code Injection
@@ -60,7 +60,7 @@ sodoSearch__url=https://cdn.jsdelivr.net/npm/@fanyangmeng/ghost-meilisearch-sear
 If you're using a managed host like Ghost(Pro), add this to your site's code injection (Settings → Code injection → Site Header):
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@fanyangmeng/ghost-meilisearch-search-ui@0.1.2/dist/search.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@fanyangmeng/ghost-meilisearch-search-ui@0.1.3/dist/search.min.js"></script>
 ```
 
 ### 3. Configure the Search UI
@@ -68,7 +68,7 @@ If you're using a managed host like Ghost(Pro), add this to your site's code inj
 Add this to your site's header code injection:
 
 ```html
-<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@fanyangmeng/ghost-meilisearch-search-ui@0.1.2/dist/styles.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@fanyangmeng/ghost-meilisearch-search-ui@0.1.3/dist/styles.css">
 
 <script>
   window.__MS_SEARCH_CONFIG__ = {
