@@ -26,7 +26,7 @@
   --ms-search-border: rgba(0, 0, 0, 0.08);
   --ms-search-shadow: rgba(0, 0, 0, 0.1);
   --ms-search-placeholder: rgb(82, 82, 82);
-  --ms-search-highlight: var(--ghost-accent-color, #6366f1);
+  --ms-search-highlight: var(--ghost-accent-color, #ff1a75);
   --ms-search-result-bg: rgb(252, 252, 252);
   --ms-search-result-hover: color-mix(in srgb, var(--ms-search-highlight) 8%, transparent);
   --ms-search-result-border: rgba(0, 0, 0, 0.08);
@@ -81,7 +81,7 @@
   --ms-search-border: rgba(0, 0, 0, 0.08);
   --ms-search-shadow: rgba(0, 0, 0, 0.1);
   --ms-search-placeholder: rgb(82, 82, 82);
-  --ms-search-highlight: var(--ghost-accent-color, #6366f1);
+  --ms-search-highlight: var(--ghost-accent-color, #ff1a75);
   --ms-search-result-bg: rgb(252, 252, 252);
   --ms-search-result-hover: color-mix(in srgb, var(--ms-search-highlight) 8%, transparent);
   --ms-search-result-border: rgba(0, 0, 0, 0.08);
