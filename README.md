@@ -87,25 +87,7 @@ Add this to your site's header code injection:
 npm install -g @fanyangmeng/ghost-meilisearch-cli
 ```
 
-2. Create `config.json`:
-```json
-{
-  "ghost": {
-    "url": "https://your-ghost-blog.com",
-    "key": "your-content-api-key",
-    "version": "v5.0"
-  },
-  "meilisearch": {
-    "host": "https://your-meilisearch-host.com",
-    "apiKey": "your-master-api-key",
-    "timeout": 5000
-  },
-  "index": {
-    "name": "ghost_posts",
-    "primaryKey": "id"
-  }
-}
-```
+2. Create `config.json` by using `example.config.json` as a template.
 
 3. Initialize and sync:
 ```bash
@@ -142,7 +124,7 @@ WEBHOOK_SECRET=your-secret-key  # Generate a random string
 
 1. Fork this repository
 2. Click the "Deploy with Workers" button above
-3. Configure these environment variables in Cloudflare Dashboard (Workers & Pages → your worker → Settings → Variables), for continuous deployment, you might need to set these environment variables every time after rebuild:
+3. Configure these environment variables in Cloudflare Dashboard (Workers & Pages → your worker → Settings → Variables), set them as secrets so that they won't be exposed in the frontend, and they won't be lost after re-deploying:
    ```env
    GHOST_URL=https://your-ghost-blog.com
    GHOST_KEY=your-content-api-key  # From Ghost Admin
@@ -168,23 +150,13 @@ WEBHOOK_SECRET=your-secret-key  # Generate a random string
 
 3. Update your `wrangler.toml`:
    ```toml
-   name = "ghost-meilisearch-webhook"
-   main = "dist/worker.js"
-   compatibility_date = "2023-10-30"
+   name = "ghost-meilisearch"
+   main = "apps/webhook-handler/cloudflare-worker/worker.js"
+   compatibility_date = "2025-03-02"
 
-   # Environment variables are set in the Cloudflare Dashboard
+   # Environment variables and secrets are set in the Cloudflare Dashboard
    # DO NOT put sensitive values here
-   ```
-  
-4. Add your environment variables by using wrangler CLI:
-   ```bash
-   wrangler secret put GHOST_URL
-   wrangler secret put GHOST_KEY
-   wrangler secret put GHOST_VERSION
-   wrangler secret put MEILISEARCH_HOST
-   wrangler secret put MEILISEARCH_API_KEY
-   wrangler secret put MEILISEARCH_INDEX_NAME
-   wrangler secret put WEBHOOK_SECRET
+   # You can also use wrangler secret put to set secrets
    ```
 
 4. Build and deploy:
@@ -223,99 +195,6 @@ Your worker will be deployed to: `https://ghost-meilisearch-webhook.[your-subdom
 
 Now your search index will automatically update when you publish, update, or delete posts!
 
-## 🔧 Installation Options
-
-### Self-hosting the Search UI
-
-Instead of using the unpkg CDN, you can self-host the search UI:
-
-1. Download the latest `search.min.js` from the [releases page](https://github.com/mfydev/ghost-meilisearch/releases)
-2. Upload it to your server or CDN
-3. Update your configuration to point to your hosted file
-
-### Docker Installation
-
-If you're using Docker for your Ghost installation, you can add Meilisearch to your `docker-compose.yml`:
-
-```yaml
-services:
-  ghost:
-    # Your existing Ghost configuration
-    environment:
-      # Add this to use the search UI
-      - sodoSearch__url=https://cdn.jsdelivr.net/npm/@fanyangmeng/ghost-meilisearch-search-ui/dist/search.min.js
-      
-  meilisearch:
-    image: getmeili/meilisearch:latest
-    environment:
-      - MEILI_MASTER_KEY=your-master-key
-    volumes:
-      - meilisearch_data:/meili_data
-    ports:
-      - "7700:7700"
-
-volumes:
-  meilisearch_data:
-```
-
-## ⚙️ Configuration
-
-### Search UI Customization
-
-You can customize the search UI by adding additional options to the `__MS_SEARCH_CONFIG__` object:
-
-```javascript
-window.__MS_SEARCH_CONFIG__ = {
-  meilisearchHost: "https://your-meilisearch-host.com",
-  meilisearchApiKey: "your-search-only-api-key",
-  indexName: "ghost_posts",
-  theme: "system",  // 'light', 'dark', or 'system'
-  placeholder: "Search articles...",  // Custom placeholder text
-  hotkeys: ["k", "/"],  // Keyboard shortcuts to open search
-  limit: 10,  // Number of results to show
-  highlightPreTag: "<mark>",  // HTML tag for highlighting matches
-  highlightPostTag: "</mark>",  // HTML tag for highlighting matches
-  searchableAttributes: ["title", "excerpt", "html", "tags.name", "authors.name"],
-  displayedAttributes: ["title", "excerpt", "feature_image", "url", "published_at", "tags", "authors"],
-  commonSearches: ["getting started", "tutorial", "guide"]  // Suggested searches
-};
-```
-
-### Index Configuration
-
-You can customize the Meilisearch index configuration by adding a `fields` array to your `config.json`:
-
-```json
-"index": {
-  "name": "ghost_posts",
-  "primaryKey": "id",
-  "fields": [
-    {
-      "name": "title",
-      "type": "string",
-      "searchable": true,
-      "filterable": false,
-      "sortable": true,
-      "displayed": true
-    },
-    {
-      "name": "html",
-      "type": "string",
-      "searchable": true,
-      "filterable": false,
-      "displayed": true
-    },
-    {
-      "name": "tags",
-      "type": "string[]",
-      "searchable": true,
-      "filterable": true,
-      "displayed": true
-    }
-  ]
-}
-```
-
 ## 🔍 Advanced Usage
 
 ### CLI Commands
@@ -333,24 +212,6 @@ ghost-meilisearch sync --config config.json
 ghost-meilisearch clear --config config.json
 ```
 
-### Customizing the Webhook Handler
-
-The webhook handler is designed to be deployed to Netlify, but you can modify it to work with other serverless platforms or as a standalone server.
-
-### Filtering and Faceting
-
-Meilisearch supports powerful filtering and faceting. You can configure these in your index settings:
-
-```javascript
-// Example of setting up filters and facets
-window.__MS_SEARCH_CONFIG__ = {
-  // ... other config
-  filterableAttributes: ["tags", "authors", "published_at"],
-  faceting: {
-    maxValuesPerFacet: 100
-  }
-};
-```
 
 ## 🔒 Security
 
@@ -360,25 +221,16 @@ window.__MS_SEARCH_CONFIG__ = {
 - Enable the webhook secret to prevent unauthorized index updates
 - If self-hosting Meilisearch, place it behind a reverse proxy with HTTPS
 
-## 👥 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
 ## 📦 Packages
 
-| Package | Description |
-|---------|-------------|
-| [@fanyangmeng/ghost-meilisearch-search-ui](packages/search-ui/README.md) | Search interface that matches your Ghost theme |
-| [@fanyangmeng/ghost-meilisearch-cli](apps/cli/README.md) | CLI tool for content syncing |
-| [@fanyangmeng/ghost-meilisearch-webhook-handler](apps/webhook-handler/README.md) | Webhook handler for real-time updates |
-| [@fanyangmeng/ghost-meilisearch-config](packages/config/README.md) | Configuration utilities |
-| [@fanyangmeng/ghost-meilisearch-core](packages/core/README.md) | Core functionality |
+| Package | Description | Latest Version |
+|---------|-------------|----------------|
+| [@fanyangmeng/ghost-meilisearch-search-ui](packages/search-ui/README.md) | Search interface that matches your Ghost theme |  0.1.3 |
+| [@fanyangmeng/ghost-meilisearch-cli](apps/cli/README.md) | CLI tool for content syncing | 0.1.3 |
+| [@fanyangmeng/ghost-meilisearch-webhook-handler](apps/webhook-handler/README.md) | Webhook handler for real-time updates |  0.2.0 |
+| [@fanyangmeng/ghost-meilisearch-config](packages/config/README.md) | Configuration utilities |  0.1.3 |
+| [@fanyangmeng/ghost-meilisearch-core](packages/core/README.md) | Core functionality |  0.1.3 |
+
 
 ## 📄 License
 
