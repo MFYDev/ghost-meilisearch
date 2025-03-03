@@ -11,7 +11,7 @@ MEILISEARCH_HOST="https://your-meilisearch-host.com"
 MEILISEARCH_API_KEY="your-master-api-key"
 MEILISEARCH_INDEX_NAME="ghost_posts"
 WEBHOOK_SECRET="your-secret-key"
-"
+
 
 # Trigger builds on push to main branch
 [triggers]
