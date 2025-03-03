@@ -136,56 +136,53 @@ WEBHOOK_SECRET=your-secret-key  # Generate a random string
 
 #### Option 2: Deploy to Cloudflare Workers
 
-1. Install Wrangler CLI:
+[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/mfydev/ghost-meilisearch)
+
+1. Fork this repository and click the "Deploy with Workers" button above, or follow the manual steps below.
+
+2. Install Wrangler CLI (if deploying manually):
 ```bash
 npm install -g wrangler
 ```
 
-2. Clone this repository and navigate to the webhook handler directory:
+3. Clone your fork and navigate to the webhook handler:
 ```bash
-git clone https://github.com/mfydev/ghost-meilisearch.git
+git clone https://github.com/your-username/ghost-meilisearch.git
 cd ghost-meilisearch/apps/webhook-handler
 ```
 
-3. Configure your `wrangler.toml` file:
+4. Configure environment variables in your `wrangler.toml`:
 ```toml
-name = "ghost-meilisearch-webhook-handler"
+name = "ghost-meilisearch-webhook"
 main = "dist/worker.js"
 compatibility_date = "2023-10-30"
 
 [vars]
-# These will be set in the Cloudflare dashboard
+# These are example environment variables
 # WEBHOOK_SECRET = ""
 # GHOST_MEILISEARCH_CONFIG = ""
 ```
 
-4. Build and deploy:
+5. Set these environment variables in the Cloudflare Dashboard (Workers & Pages → your worker → Settings → Variables):
+```env
+GHOST_URL=https://your-ghost-blog.com
+GHOST_KEY=your-content-api-key
+GHOST_VERSION=v5.0
+MEILISEARCH_HOST=https://your-meilisearch-host.com
+MEILISEARCH_API_KEY=your-master-api-key
+MEILISEARCH_INDEX_NAME=ghost_posts
+WEBHOOK_SECRET=your-secret-key
+```
+
+6. Build and deploy:
 ```bash
+npm install
 npm run build
 wrangler deploy
 ```
 
-5. Set these environment variables in the Cloudflare Dashboard:
-   - `WEBHOOK_SECRET`: A random string to secure your webhook
-   - `GHOST_MEILISEARCH_CONFIG`: A JSON string containing your configuration:
-   ```json
-   {
-     "ghost": {
-       "url": "https://your-ghost-blog.com",
-       "key": "your-content-api-key",
-       "version": "v5.0"
-     },
-     "meilisearch": {
-       "host": "https://your-meilisearch-host.com",
-       "apiKey": "your-master-api-key",
-       "timeout": 5000
-     },
-     "index": {
-       "name": "ghost_posts",
-       "primaryKey": "id"
-     }
-   }
-   ```
+7. The worker will be deployed to: `https://ghost-meilisearch-webhook.[your-subdomain].workers.dev`
+
 
 #### Set up webhooks in Ghost Admin:
 
@@ -194,12 +191,22 @@ wrangler deploy
 3. Give it a name (e.g. "Meilisearch Search")
 4. Add these webhooks:
 
-  | Event | Target URL |
-  |--------|------------|
-  | Post published | `https://your-site.netlify.app/.netlify/functions/handler` or `https://your-worker-name.your-subdomain.workers.dev` |
-  | Post updated | `https://your-site.netlify.app/.netlify/functions/handler` or `https://your-worker-name.your-subdomain.workers.dev` |
-  | Post deleted | `https://your-site.netlify.app/.netlify/functions/handler` or `https://your-worker-name.your-subdomain.workers.dev` |
-  | Post unpublished | `https://your-site.netlify.app/.netlify/functions/handler` or `https://your-worker-name.your-subdomain.workers.dev` |
+   For Netlify deployment:
+   | Event | Target URL |
+   |--------|------------|
+   | Post published | `https://your-site.netlify.app/.netlify/functions/handler` |
+   | Post updated | `https://your-site.netlify.app/.netlify/functions/handler` |
+   | Post deleted | `https://your-site.netlify.app/.netlify/functions/handler` |
+   | Post unpublished | `https://your-site.netlify.app/.netlify/functions/handler` |
+
+   For Cloudflare Workers deployment:
+   | Event | Target URL |
+   |--------|------------|
+   | Post published | `https://ghost-meilisearch-webhook.[your-subdomain].workers.dev` |
+   | Post updated | `https://ghost-meilisearch-webhook.[your-subdomain].workers.dev` |
+   | Post deleted | `https://ghost-meilisearch-webhook.[your-subdomain].workers.dev` |
+   | Post unpublished | `https://ghost-meilisearch-webhook.[your-subdomain].workers.dev` |
+
 
 Now your search index will automatically update when you publish, update, or delete posts!
 
