@@ -138,20 +138,20 @@ WEBHOOK_SECRET=your-secret-key  # Generate a random string
 
 [![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/mfydev/ghost-meilisearch)
 
-1. Fork this repository and click the "Deploy with Workers" button above, or follow the manual steps below.
+1. Fork this repository and click the "Deploy with Workers" button above, or follow the manual steps below. You can also choose to manually create the worker by linking the forked repo, and you just need to set deploy command to `cd apps/webhook-handler && npx wrangler deploy`.
 
 2. Install Wrangler CLI (if deploying manually):
 ```bash
 npm install -g wrangler
 ```
 
-3. Clone your fork and navigate to the webhook handler:
+1. Clone your fork and navigate to the webhook handler:
 ```bash
 git clone https://github.com/your-username/ghost-meilisearch.git
 cd ghost-meilisearch/apps/webhook-handler
 ```
 
-4. Configure environment variables in your `wrangler.toml`:
+1. Configure environment variables in your `wrangler.toml`:
 ```toml
 name = "ghost-meilisearch-webhook"
 main = "dist/worker.js"
