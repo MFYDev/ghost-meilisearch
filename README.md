@@ -19,7 +19,7 @@ Add powerful, lightning-fast search to your Ghost blog with Meilisearch. This in
 ghost-meilisearch/
 ├── apps/
 │   ├── cli/                 # CLI tool
-│   └── webhook-handler/     # Netlify function for webhook handling
+│   └── webhook-handler/     # Webhook handler (Netlify & Cloudflare Workers)
 ├── packages/
 │   ├── config/              # Configuration utilities
 │   ├── core/                # Core functionality
@@ -117,6 +117,8 @@ ghost-meilisearch sync --config config.json
 
 To keep your search index in sync with your content:
 
+#### Option 1: Deploy to Netlify
+
 1. Deploy the webhook handler to Netlify:
 
 [![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/mfydev/ghost-meilisearch)
@@ -132,18 +134,72 @@ MEILISEARCH_INDEX_NAME=ghost_posts  # Must match search config
 WEBHOOK_SECRET=your-secret-key  # Generate a random string
 ```
 
-3. Set up webhooks in Ghost Admin:
-   - Go to Settings → Integrations
-   - Create/select a Custom Integration
-   - Give it a name (e.g. "Meilisearch Search")
-   - Add these webhooks:
+#### Option 2: Deploy to Cloudflare Workers
+
+1. Install Wrangler CLI:
+```bash
+npm install -g wrangler
+```
+
+2. Clone this repository and navigate to the webhook handler directory:
+```bash
+git clone https://github.com/mfydev/ghost-meilisearch.git
+cd ghost-meilisearch/apps/webhook-handler
+```
+
+3. Configure your `wrangler.toml` file:
+```toml
+name = "ghost-meilisearch-webhook-handler"
+main = "dist/worker.js"
+compatibility_date = "2023-10-30"
+
+[vars]
+# These will be set in the Cloudflare dashboard
+# WEBHOOK_SECRET = ""
+# GHOST_MEILISEARCH_CONFIG = ""
+```
+
+4. Build and deploy:
+```bash
+npm run build
+wrangler deploy
+```
+
+5. Set these environment variables in the Cloudflare Dashboard:
+   - `WEBHOOK_SECRET`: A random string to secure your webhook
+   - `GHOST_MEILISEARCH_CONFIG`: A JSON string containing your configuration:
+   ```json
+   {
+     "ghost": {
+       "url": "https://your-ghost-blog.com",
+       "key": "your-content-api-key",
+       "version": "v5.0"
+     },
+     "meilisearch": {
+       "host": "https://your-meilisearch-host.com",
+       "apiKey": "your-master-api-key",
+       "timeout": 5000
+     },
+     "index": {
+       "name": "ghost_posts",
+       "primaryKey": "id"
+     }
+   }
+   ```
+
+#### Set up webhooks in Ghost Admin:
+
+1. Go to Settings → Integrations
+2. Create/select a Custom Integration
+3. Give it a name (e.g. "Meilisearch Search")
+4. Add these webhooks:
 
   | Event | Target URL |
   |--------|------------|
-  | Post published | `https://your-site.netlify.app/.netlify/functions/handler` |
-  | Post updated | `https://your-site.netlify.app/.netlify/functions/handler` |
-  | Post deleted | `https://your-site.netlify.app/.netlify/functions/handler` |
-  | Post unpublished | `https://your-site.netlify.app/.netlify/functions/handler` |
+  | Post published | `https://your-site.netlify.app/.netlify/functions/handler` or `https://your-worker-name.your-subdomain.workers.dev` |
+  | Post updated | `https://your-site.netlify.app/.netlify/functions/handler` or `https://your-worker-name.your-subdomain.workers.dev` |
+  | Post deleted | `https://your-site.netlify.app/.netlify/functions/handler` or `https://your-worker-name.your-subdomain.workers.dev` |
+  | Post unpublished | `https://your-site.netlify.app/.netlify/functions/handler` or `https://your-worker-name.your-subdomain.workers.dev` |
 
 Now your search index will automatically update when you publish, update, or delete posts!
 

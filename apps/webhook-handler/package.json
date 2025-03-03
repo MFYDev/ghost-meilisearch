@@ -6,7 +6,10 @@
   "types": "dist/handlerd.ts",
   "type": "module",
   "scripts": {
-    "build": "tsc",
+    "build": "npm run build:netlify && npm run build:cloudflare",
+    "build:netlify": "tsc -p tsconfig.netlify.json",
+    "build:cloudflare": "tsc -p tsconfig.cloudflare.json && npm run fix:cloudflare",
+    "fix:cloudflare": "node ../../scripts/fix-cloudflare-imports.js",
     "clean": "rimraf dist",
     "dev": "tsc --watch",
     "lint": "eslint src --ext .ts",
@@ -18,6 +21,7 @@
     "@netlify/functions": "^2.4.1"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240320.1",
     "@types/jest": "^29.5.12",
     "@types/node": "^20.11.17",
     "eslint": "^8.56.0",
