@@ -1,4 +1,4 @@
-name = "ghost-meilisearch-webhook-handler"
+name = "ghost-meilisearch"
 main = "apps/webhook-handler/dist/worker.js"
 compatibility_date = "2023-10-30"
 

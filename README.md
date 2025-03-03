@@ -142,7 +142,7 @@ WEBHOOK_SECRET=your-secret-key  # Generate a random string
 
 1. Fork this repository
 2. Click the "Deploy with Workers" button above
-3. Configure these environment variables in Cloudflare Dashboard (Workers & Pages → your worker → Settings → Variables), for continuous deployment, you might want to set these environment variables under the build settings instead:
+3. Configure these environment variables in Cloudflare Dashboard (Workers & Pages → your worker → Settings → Variables), for continuous deployment, you might need to set these environment variables every time after rebuild:
    ```env
    GHOST_URL=https://your-ghost-blog.com
    GHOST_KEY=your-content-api-key  # From Ghost Admin
@@ -174,6 +174,17 @@ WEBHOOK_SECRET=your-secret-key  # Generate a random string
 
    # Environment variables are set in the Cloudflare Dashboard
    # DO NOT put sensitive values here
+   ```
+  
+4. Add your environment variables by using wrangler CLI:
+   ```bash
+   wrangler secret put GHOST_URL
+   wrangler secret put GHOST_KEY
+   wrangler secret put GHOST_VERSION
+   wrangler secret put MEILISEARCH_HOST
+   wrangler secret put MEILISEARCH_API_KEY
+   wrangler secret put MEILISEARCH_INDEX_NAME
+   wrangler secret put WEBHOOK_SECRET
    ```
 
 4. Build and deploy:
