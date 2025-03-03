@@ -1,17 +1,13 @@
-name = "ghost-meilisearch"
+name = "ghost-meilisearch-webhook-handler"
 main = "apps/webhook-handler/dist/worker.js"
 compatibility_date = "2023-10-30"
 
-[vars]
-# These are example environment variables
-GHOST_URL="https://your-ghost-blog.com"
-GHOST_KEY="your-content-api-key" 
-GHOST_VERSION="v5.0"
-MEILISEARCH_HOST="https://your-meilisearch-host.com"
-MEILISEARCH_API_KEY="your-master-api-key"
-MEILISEARCH_INDEX_NAME="ghost_posts"
-WEBHOOK_SECRET="your-secret-key"
+# Environment variables should be configured as secrets to persist across deployments
+# Use the following commands to set them:
+# wrangler secret put WEBHOOK_SECRET
+# wrangler secret put GHOST_MEILISEARCH_CONFIG
 
+# Note: Do NOT define secrets in [vars] as they will be overwritten on deploy
 
 # Trigger builds on push to main branch
 [triggers]
