@@ -1,13 +1,13 @@
 [build]
   command = "npm run build"
   publish = "public"
-  functions = "apps/webhook-handler/dist/handler"
+  functions = "apps/webhook-handler/netlify-functions"
 
 [dev]
   command = "npm run dev"
   port = 8888
   publish = "public"
-  functions = "apps/webhook-handler/dist/handler"
+  functions = "apps/webhook-handler/netlify-functions"
   targetPort = 3000  # Add this line with a port that's not used
   framework = "#static"  # Add this line to specify static site
 
