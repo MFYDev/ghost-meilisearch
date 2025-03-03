@@ -16,4 +16,4 @@ crons = []
 
 # Configure build
 [build]
-command = "npm run build:webhook-handler"
+command = "npm run build:webhook"
