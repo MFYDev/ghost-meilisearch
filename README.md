@@ -138,50 +138,52 @@ WEBHOOK_SECRET=your-secret-key  # Generate a random string
 
 [![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/mfydev/ghost-meilisearch)
 
-1. Fork this repository and click the "Deploy with Workers" button above, or follow the manual steps below. You can also choose to manually create the worker by linking the forked repo, and you just need to set deploy command to `cd apps/webhook-handler && npx wrangler deploy`.
+##### Option A: Quick Deploy (Recommended)
 
-2. Install Wrangler CLI (if deploying manually):
-```bash
-npm install -g wrangler
-```
+1. Fork this repository
+2. Click the "Deploy with Workers" button above
+3. Configure these environment variables in Cloudflare Dashboard (Workers & Pages → your worker → Settings → Variables), for continuous deployment, you might want to set these environment variables under the build settings instead:
+   ```env
+   GHOST_URL=https://your-ghost-blog.com
+   GHOST_KEY=your-content-api-key  # From Ghost Admin
+   GHOST_VERSION=v5.0
+   MEILISEARCH_HOST=https://your-meilisearch-host.com
+   MEILISEARCH_API_KEY=your-master-api-key  # Meilisearch Master API key
+   MEILISEARCH_INDEX_NAME=ghost_posts  # Must match search config
+   WEBHOOK_SECRET=your-secret-key  # Generate a random string
+   ```
 
-1. Clone your fork and navigate to the webhook handler:
-```bash
-git clone https://github.com/your-username/ghost-meilisearch.git
-cd ghost-meilisearch/apps/webhook-handler
-```
+##### Option B: Manual Deploy
 
-1. Configure environment variables in your `wrangler.toml`:
-```toml
-name = "ghost-meilisearch-webhook"
-main = "dist/worker.js"
-compatibility_date = "2023-10-30"
+1. Install Wrangler CLI:
+   ```bash
+   npm install -g wrangler
+   ```
 
-[vars]
-# These are example environment variables
-# WEBHOOK_SECRET = ""
-# GHOST_MEILISEARCH_CONFIG = ""
-```
+2. Clone your fork and navigate to the webhook handler:
+   ```bash
+   git clone https://github.com/your-username/ghost-meilisearch.git
+   cd ghost-meilisearch/apps/webhook-handler
+   ```
 
-5. Set these environment variables in the Cloudflare Dashboard (Workers & Pages → your worker → Settings → Variables):
-```env
-GHOST_URL=https://your-ghost-blog.com
-GHOST_KEY=your-content-api-key
-GHOST_VERSION=v5.0
-MEILISEARCH_HOST=https://your-meilisearch-host.com
-MEILISEARCH_API_KEY=your-master-api-key
-MEILISEARCH_INDEX_NAME=ghost_posts
-WEBHOOK_SECRET=your-secret-key
-```
+3. Update your `wrangler.toml`:
+   ```toml
+   name = "ghost-meilisearch-webhook"
+   main = "dist/worker.js"
+   compatibility_date = "2023-10-30"
 
-6. Build and deploy:
-```bash
-npm install
-npm run build
-wrangler deploy
-```
+   # Environment variables are set in the Cloudflare Dashboard
+   # DO NOT put sensitive values here
+   ```
 
-7. The worker will be deployed to: `https://ghost-meilisearch-webhook.[your-subdomain].workers.dev`
+4. Build and deploy:
+   ```bash
+   npm install
+   npm run build
+   wrangler deploy
+   ```
+
+Your worker will be deployed to: `https://ghost-meilisearch-webhook.[your-subdomain].workers.dev`
 
 
 #### Set up webhooks in Ghost Admin:
