@@ -1,5 +1,5 @@
 name = "ghost-meilisearch-webhook-handler"
-main = "dist/worker.js"
+main = "apps/webhook-handler/dist/worker.js"
 compatibility_date = "2023-10-30"
 
 [vars]
@@ -16,4 +16,4 @@ crons = []
 
 # Configure build
 [build]
-command = "npm run build" 
+command = "npm run build:webhook-handler"
