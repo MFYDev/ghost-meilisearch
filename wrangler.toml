@@ -4,8 +4,14 @@ compatibility_date = "2023-10-30"
 
 [vars]
 # These are example environment variables
-# WEBHOOK_SECRET = ""
-# GHOST_MEILISEARCH_CONFIG = ""
+GHOST_URL="https://your-ghost-blog.com"
+GHOST_KEY="your-content-api-key" 
+GHOST_VERSION="v5.0"
+MEILISEARCH_HOST="https://your-meilisearch-host.com"
+MEILISEARCH_API_KEY="your-master-api-key"
+MEILISEARCH_INDEX_NAME="ghost_posts"
+WEBHOOK_SECRET="your-secret-key"
+"
 
 # Trigger builds on push to main branch
 [triggers]
