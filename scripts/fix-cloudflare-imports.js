@@ -14,7 +14,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Path to the worker.js file
-const workerPath = path.join(__dirname, '../apps/webhook-handler/dist/worker.js');
+const workerPath = path.join(__dirname, '../apps/webhook-handler/cloudflare-worker/worker.js');
 
 // Check if the file exists
 if (!fs.existsSync(workerPath)) {
@@ -37,4 +37,4 @@ content = content.replace(/from\s+['"](\.[^'"]+)['"]/g, (match, importPath) => {
 // Write the file back
 fs.writeFileSync(workerPath, content);
 
-console.log('Fixed Cloudflare Worker imports'); 
+console.log('Fixed Cloudflare Worker imports');

@@ -7,6 +7,8 @@ node_modules/
 dist/
 build/
 *.tsbuildinfo
+netlify-functions/
+cloudflare-worker/
 
 # Testing
 coverage/
@@ -43,4 +45,3 @@ content
 config.json
 config.production.json
 docker-compose.yml
-netlify-functions/

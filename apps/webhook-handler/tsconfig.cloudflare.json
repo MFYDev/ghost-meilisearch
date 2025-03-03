@@ -1,7 +1,7 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "outDir": "./dist",
+    "outDir": "./cloudflare-worker",
     "rootDir": "./src",
     "declaration": false,
     "target": "es2020",
@@ -17,4 +17,4 @@
     { "path": "../../packages/config" },
     { "path": "../../packages/core" }
   ]
-} 
+}

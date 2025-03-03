@@ -1,5 +1,5 @@
 name = "ghost-meilisearch"
-main = "apps/webhook-handler/dist/worker.js"
+main = "apps/webhook-handler/cloudflare-worker/worker.js"
 compatibility_date = "2025-03-02"
 
 # Environment variables should be configured as secrets to persist across deployments
