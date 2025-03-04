@@ -1,6 +1,6 @@
 {
   "name": "@fanyangmeng/ghost-meilisearch-webhook-handler",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Webhook handler for Ghost-Meilisearch integration",
   "main": "dist/handler.js",
   "types": "dist/handlerd.ts",
