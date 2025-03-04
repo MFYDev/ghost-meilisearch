@@ -225,11 +225,11 @@ ghost-meilisearch clear --config config.json
 
 | Package | Description | Latest Version |
 |---------|-------------|----------------|
-| [@fanyangmeng/ghost-meilisearch-search-ui](packages/search-ui/README.md) | Search interface that matches your Ghost theme |  0.1.3 |
+| [@fanyangmeng/ghost-meilisearch-search-ui](packages/search-ui) | Search interface that matches your Ghost theme |  0.1.3 |
 | [@fanyangmeng/ghost-meilisearch-cli](apps/cli/README.md) | CLI tool for content syncing | 0.1.3 |
-| [@fanyangmeng/ghost-meilisearch-webhook-handler](apps/webhook-handler/README.md) | Webhook handler for real-time updates |  0.2.0 |
-| [@fanyangmeng/ghost-meilisearch-config](packages/config/README.md) | Configuration utilities |  0.1.3 |
-| [@fanyangmeng/ghost-meilisearch-core](packages/core/README.md) | Core functionality |  0.1.3 |
+| [@fanyangmeng/ghost-meilisearch-webhook-handler](apps/webhook-handler) | Webhook handler for real-time updates |  0.3.0 |
+| [@fanyangmeng/ghost-meilisearch-config](packages/config) | Configuration utilities |  0.1.3 |
+| [@fanyangmeng/ghost-meilisearch-core](packages/core) | Core functionality |  0.1.3 |
 
 
 ## 📄 License
