@@ -10,7 +10,7 @@
     "build": "npm run build:netlify && npm run build:cloudflare && npm run build:vercel",
     "build:netlify": "tsc -p tsconfig.netlify.json",
     "build:cloudflare": "tsc -p tsconfig.cloudflare.json && npm run fix:cloudflare",
-    "build:vercel": "next build",
+    "build:vercel": "npm install && next build",
     "fix:cloudflare": "node ../../scripts/fix-cloudflare-imports.js",
     "clean": "rimraf dist",
     "dev": "tsc --watch",
