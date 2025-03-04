@@ -1,0 +1,11 @@
+{
+    "version": 2,
+    "buildCommand": "npm run build:vercel",
+    "framework": "nextjs",
+    "outputDirectory": ".next",
+    "routes": [
+      { "src": "/api/webhook(.*)", "dest": "/api/webhook$1" },
+      { "handle": "filesystem" },
+      { "src": "/(.*)", "dest": "/index.html" }
+    ]
+  }
