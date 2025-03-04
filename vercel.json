@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "cd apps/webhook-handler && npm run build:vercel",
+  "buildCommand": "npm run build",
   "outputDirectory": "apps/webhook-handler/.next",
   "framework": "nextjs"
 } 
