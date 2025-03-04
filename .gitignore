@@ -45,3 +45,5 @@ content
 config.json
 config.production.json
 docker-compose.yml
+.vercel
+.next
