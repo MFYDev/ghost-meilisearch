@@ -19,7 +19,7 @@ Add powerful, lightning-fast search to your Ghost blog with Meilisearch. This in
 ghost-meilisearch/
 ├── apps/
 │   ├── cli/                 # CLI tool
-│   └── webhook-handler/     # Webhook handler (Netlify & Cloudflare Workers)
+│   └── webhook-handler/     # Webhook handler (Netlify, Vercel & Cloudflare Workers)
 ├── packages/
 │   ├── config/              # Configuration utilities
 │   ├── core/                # Core functionality
@@ -116,7 +116,24 @@ MEILISEARCH_INDEX_NAME=ghost_posts  # Must match search config
 WEBHOOK_SECRET=your-secret-key  # Generate a random string
 ```
 
-#### Option 2: Deploy to Cloudflare Workers
+#### Option 2: Deploy to Vercel
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/mfydev/ghost-meilisearch)
+
+1. Fork this repository
+2. Click the "Deploy with Vercel" button above
+3. Configure these environment variables in Vercel (Settings → Environment Variables):
+   ```env
+   GHOST_URL=https://your-ghost-blog.com
+   GHOST_KEY=your-content-api-key  # From Ghost Admin
+   GHOST_VERSION=v5.0
+   MEILISEARCH_HOST=https://your-meilisearch-host.com
+   MEILISEARCH_API_KEY=your-master-api-key  # Meilisearch Master API key
+   MEILISEARCH_INDEX_NAME=ghost_posts  # Must match search config
+   WEBHOOK_SECRET=your-secret-key  # Generate a random string
+   ```
+
+#### Option 3: Deploy to Cloudflare Workers
 
 [![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/mfydev/ghost-meilisearch)
 
@@ -184,6 +201,14 @@ Your worker will be deployed to: `https://ghost-meilisearch-webhook.[your-subdom
    | Post deleted | `https://your-site.netlify.app/.netlify/functions/handler` |
    | Post unpublished | `https://your-site.netlify.app/.netlify/functions/handler` |
 
+   For Vercel deployment:
+   | Event | Target URL |
+   |--------|------------|
+   | Post published | `https://your-app.vercel.app/api/webhook` |
+   | Post updated | `https://your-app.vercel.app/api/webhook` |
+   | Post deleted | `https://your-app.vercel.app/api/webhook` |
+   | Post unpublished | `https://your-app.vercel.app/api/webhook` |
+
    For Cloudflare Workers deployment:
    | Event | Target URL |
    |--------|------------|
@@ -207,6 +232,12 @@ ghost-meilisearch init --config config.json
 
 # Sync all posts from Ghost to Meilisearch
 ghost-meilisearch sync --config config.json
+
+# Index a single post by ID
+ghost-meilisearch index <post-id> --config config.json
+
+# Delete a single post from the index by ID
+ghost-meilisearch delete <post-id> --config config.json
 
 # Clear all documents from the index
 ghost-meilisearch clear --config config.json
