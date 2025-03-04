@@ -12,7 +12,9 @@ const nextConfig = {
   },
   publicRuntimeConfig: {
     // Will be available on both server and client
-  }
+  },
+  // Ensure static assets are properly served
+  assetPrefix: process.env.NODE_ENV === 'production' ? undefined : '',
 };
 
 export default nextConfig; 
