@@ -97,15 +97,16 @@ ghost-meilisearch sync --config config.json
 
 ### 5. Set Up Real-Time Updates (Optional)
 
-To keep your search index in sync with your content:
+To keep your search index in sync with your content, you can deploy the webhook handler to your preferred platform:
 
-#### Option 1: Deploy to Netlify
-
-1. Deploy the webhook handler to Netlify:
+#### Deploy to Your Platform
 
 [![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/mfydev/ghost-meilisearch)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/mfydev/ghost-meilisearch)
+[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/mfydev/ghost-meilisearch)
 
-2. Set these environment variables in Netlify (Site settings → Environment variables):
+1. Click one of the deployment buttons above
+2. Set these environment variables in your platform's dashboard:
 ```env
 GHOST_URL=https://your-ghost-blog.com
 GHOST_KEY=your-content-api-key  # From Ghost Admin
@@ -116,74 +117,20 @@ MEILISEARCH_INDEX_NAME=ghost_posts  # Must match search config
 WEBHOOK_SECRET=your-secret-key  # Generate a random string
 ```
 
-#### Option 2: Deploy to Vercel
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/mfydev/ghost-meilisearch)
-
-1. Fork this repository
-2. Click the "Deploy with Vercel" button above
-3. Configure these environment variables in Vercel (Settings → Environment Variables):
-   ```env
-   GHOST_URL=https://your-ghost-blog.com
-   GHOST_KEY=your-content-api-key  # From Ghost Admin
-   GHOST_VERSION=v5.0
-   MEILISEARCH_HOST=https://your-meilisearch-host.com
-   MEILISEARCH_API_KEY=your-master-api-key  # Meilisearch Master API key
-   MEILISEARCH_INDEX_NAME=ghost_posts  # Must match search config
-   WEBHOOK_SECRET=your-secret-key  # Generate a random string
-   ```
-
-#### Option 3: Deploy to Cloudflare Workers
-
-[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/mfydev/ghost-meilisearch)
-
-1. Fork this repository
-2. Click the "Deploy with Workers" button above
-3. Configure these environment variables in Cloudflare Dashboard (Workers & Pages → your worker → Settings → Variables), set them as secrets so that they won't be exposed in the frontend, and they won't be lost after re-deploying:
-   ```env
-   GHOST_URL=https://your-ghost-blog.com
-   GHOST_KEY=your-content-api-key  # From Ghost Admin
-   GHOST_VERSION=v5.0
-   MEILISEARCH_HOST=https://your-meilisearch-host.com
-   MEILISEARCH_API_KEY=your-master-api-key  # Meilisearch Master API key
-   MEILISEARCH_INDEX_NAME=ghost_posts  # Must match search config
-   WEBHOOK_SECRET=your-secret-key  # Generate a random string
-   ```
-
-Your worker will be deployed to: `https://ghost-meilisearch-webhook.[your-subdomain].workers.dev`
-
-
 #### Set up webhooks in Ghost Admin:
 
 1. Go to Settings → Integrations
 2. Create/select a Custom Integration
 3. Give it a name (e.g. "Meilisearch Search")
-4. Add these webhooks:
+4. Add these webhooks with your deployed URL:
 
-   For Netlify deployment:
-   | Event | Target URL |
-   |--------|------------|
-   | Post published | `https://your-site.netlify.app/.netlify/functions/handler` |
-   | Post updated | `https://your-site.netlify.app/.netlify/functions/handler` |
-   | Post deleted | `https://your-site.netlify.app/.netlify/functions/handler` |
-   | Post unpublished | `https://your-site.netlify.app/.netlify/functions/handler` |
+| Platform | Webhook URL Format |
+|----------|-------------------|
+| Netlify | `https://your-site.netlify.app/.netlify/functions/handler` |
+| Vercel | `https://your-app.vercel.app/api/webhook` |
+| Cloudflare Workers | `https://ghost-meilisearch-webhook.[your-subdomain].workers.dev` |
 
-   For Vercel deployment:
-   | Event | Target URL |
-   |--------|------------|
-   | Post published | `https://your-app.vercel.app/api/webhook` |
-   | Post updated | `https://your-app.vercel.app/api/webhook` |
-   | Post deleted | `https://your-app.vercel.app/api/webhook` |
-   | Post unpublished | `https://your-app.vercel.app/api/webhook` |
-
-   For Cloudflare Workers deployment:
-   | Event | Target URL |
-   |--------|------------|
-   | Post published | `https://ghost-meilisearch-webhook.[your-subdomain].workers.dev` |
-   | Post updated | `https://ghost-meilisearch-webhook.[your-subdomain].workers.dev` |
-   | Post deleted | `https://ghost-meilisearch-webhook.[your-subdomain].workers.dev` |
-   | Post unpublished | `https://ghost-meilisearch-webhook.[your-subdomain].workers.dev` |
-
+Add all four events (Post published, updated, deleted, unpublished) pointing to your webhook URL.
 
 Now your search index will automatically update when you publish, update, or delete posts!
 
@@ -210,7 +157,6 @@ ghost-meilisearch delete <post-id> --config config.json
 ghost-meilisearch clear --config config.json
 ```
 
-
 ## 🔒 Security
 
 - **Never** use your Meilisearch master key in the frontend
@@ -228,7 +174,6 @@ ghost-meilisearch clear --config config.json
 | [@fanyangmeng/ghost-meilisearch-webhook-handler](apps/webhook-handler) | Webhook handler for real-time updates |  0.3.0 |
 | [@fanyangmeng/ghost-meilisearch-config](packages/config) | Configuration utilities |  0.1.3 |
 | [@fanyangmeng/ghost-meilisearch-core](packages/core) | Core functionality |  0.1.3 |
-
 
 ## 📄 License
 
