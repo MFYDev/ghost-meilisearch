@@ -1,5 +1,5 @@
 {
-  "name": "@mfydev/ghost-meilisearch",
+  "name": "@fanyangmeng/ghost-meilisearch",
   "version": "0.2.0",
   "description": "Meilisearch integration for Ghost CMS",
   "main": "dist/index.js",
@@ -58,11 +58,11 @@
   "author": "Fanyang Meng",
   "license": "MIT",
   "dependencies": {
-    "@mfydev/ghost-meilisearch-cli": "file:apps/cli",
-    "@mfydev/ghost-meilisearch-config": "file:packages/config",
-    "@mfydev/ghost-meilisearch-core": "file:packages/core",
-    "@mfydev/ghost-meilisearch-search-ui": "file:packages/search-ui",
-    "@mfydev/ghost-meilisearch-webhook-handler": "file:apps/webhook-handler"
+    "@fanyangmeng/ghost-meilisearch-cli": "file:apps/cli",
+    "@fanyangmeng/ghost-meilisearch-config": "file:packages/config",
+    "@fanyangmeng/ghost-meilisearch-core": "file:packages/core",
+    "@fanyangmeng/ghost-meilisearch-search-ui": "file:packages/search-ui",
+    "@fanyangmeng/ghost-meilisearch-webhook-handler": "file:apps/webhook-handler"
   },
   "devDependencies": {
     "@tryghost/content-api": "^1.11.21",
