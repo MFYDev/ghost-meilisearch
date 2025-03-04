@@ -137,8 +137,6 @@ WEBHOOK_SECRET=your-secret-key  # Generate a random string
 
 [![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/mfydev/ghost-meilisearch)
 
-##### Option A: Quick Deploy (Recommended)
-
 1. Fork this repository
 2. Click the "Deploy with Workers" button above
 3. Configure these environment variables in Cloudflare Dashboard (Workers & Pages → your worker → Settings → Variables), set them as secrets so that they won't be exposed in the frontend, and they won't be lost after re-deploying:
