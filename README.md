@@ -65,6 +65,25 @@ If you're using a managed host like Ghost(Pro), add this to your site's code inj
 
 ### 3. Configure the Search UI
 
+Firstly, create a search-only API key in Meilisearch, You can follow the guide [here](https://www.meilisearch.com/docs/reference/api/keys#create-a-key).
+
+Basically, you need to specify the `actions` to `["search"]` and `indexes` to `["ghost_posts"]`.
+
+```bash
+curl \
+  -X POST 'MEILISEARCH_URL/keys' \
+  -H 'Authorization: Bearer MASTER_KEY' \
+  -H 'Content-Type: application/json' \
+  --data-binary '{
+    "description": "Search only key for ghost blog",
+    "actions": ["search"],
+    "indexes": ["ghost_posts"],
+    "expiresAt": null
+  }'
+```
+
+Remember, never use the default master API key in the below, it will expose your Meilisearch instance to the public, and allow everyone to add, update and delete documents from your Meilisearch index.
+
 Add this to your site's header code injection:
 
 ```html
