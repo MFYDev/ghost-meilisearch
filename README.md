@@ -36,6 +36,7 @@ You'll need:
 - A Meilisearch instance ([cloud](https://cloud.meilisearch.com) or [self-hosted](https://docs.meilisearch.com/learn/getting_started/installation.html))
 - Content API key from Ghost (for syncing content), you can get it by following the guide [here](https://ghost.org/docs/content-api/)
 - Search-only API key from Meilisearch (for the search UI)
+- Writing API key for the index ghost_post from Meilisearch (for the webhook handler)
 
 ### 2. Add Search to Your Theme
 
@@ -125,7 +126,20 @@ To keep your search index in sync with your content, you can deploy the webhook 
 [![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/mfydev/ghost-meilisearch)
 
 1. Click one of the deployment buttons above
-2. Set these environment variables in your platform's dashboard:
+2. Create a new API key in Meilisearch, and set the `actions` to `["documents.add", "documents.update", "documents.delete"]` and `indexes` to `["ghost_posts"]`.
+```bash
+curl \
+  -X POST 'MEILISEARCH_URL/keys' \
+  -H 'Authorization: Bearer MASTER_KEY' \
+  -H 'Content-Type: application/json' \
+  --data-binary '{
+    "description": "Ghost Meilisearch Webhook Handler API key",
+    "actions": ["documents.add", "documents.update", "documents.delete"],
+    "indexes": ["ghost_posts"],
+    "expiresAt": null
+  }'
+```
+3. Set these environment variables in your platform's dashboard:
 ```env
 GHOST_URL=https://your-ghost-blog.com
 GHOST_KEY=your-content-api-key  # From Ghost Admin
