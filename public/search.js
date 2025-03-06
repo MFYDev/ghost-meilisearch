@@ -5747,10 +5747,15 @@
 	    if (results.length === 0 || this.state.selectedIndex < 0) return;
 
 	    const selectedResult = results[this.state.selectedIndex];
+	    
+	    // Close the search UI first
+	    this.close();
+	    
+	    // Then redirect to the URL
 	    if (selectedResult && selectedResult.url) {
 	      window.location.href = selectedResult.url;
 	    } else if (selectedResult && selectedResult.slug) {
-	      // Fallback to slug if url is not available
+	      // Fallback to slug if URL is not available
 	      window.location.href = `/${selectedResult.slug}`;
 	    }
 	  }
@@ -5877,11 +5882,21 @@
 	      const link = document.createElement('a');
 	      if (hit.url) {
 	        link.href = hit.url;
-	      } else if (hit.slug) {
-	        // Fallback to slug if url is not available
+	      } else {
+	        // Fallback to slug if URL is not available
 	        link.href = `/${hit.slug}`;
 	      }
 	      link.classList.add('ms-result-link');
+	      
+	      // Add click event listener to close search before navigation
+	      link.addEventListener('click', (e) => {
+	        e.preventDefault();
+	        this.close();
+	        // Navigate after a brief delay to ensure UI is closed
+	        setTimeout(() => {
+	          window.location.href = link.href;
+	        }, 10);
+	      });
 	      
 	      // Create result item container
 	      const resultItem = document.createElement('div');
