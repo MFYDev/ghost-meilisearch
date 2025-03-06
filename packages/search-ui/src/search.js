@@ -349,7 +349,7 @@ class GhostMeilisearchSearch {
     if (selectedResult && selectedResult.url) {
       window.location.href = selectedResult.url;
     } else if (selectedResult && selectedResult.slug) {
-      // Fallback to slug if url is not available
+      // Fallback to slug if URL is not available
       window.location.href = `/${selectedResult.slug}`;
     }
   }
@@ -476,8 +476,8 @@ class GhostMeilisearchSearch {
       const link = document.createElement('a');
       if (hit.url) {
         link.href = hit.url;
-      } else if (hit.slug) {
-        // Fallback to slug if url is not available
+      } else {
+        // Fallback to slug if URL is not available
         link.href = `/${hit.slug}`;
       }
       link.classList.add('ms-result-link');
