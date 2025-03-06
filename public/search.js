@@ -5747,7 +5747,10 @@
 	    if (results.length === 0 || this.state.selectedIndex < 0) return;
 
 	    const selectedResult = results[this.state.selectedIndex];
-	    if (selectedResult && selectedResult.slug) {
+	    if (selectedResult && selectedResult.url) {
+	      window.location.href = selectedResult.url;
+	    } else if (selectedResult && selectedResult.slug) {
+	      // Fallback to slug if url is not available
 	      window.location.href = `/${selectedResult.slug}`;
 	    }
 	  }
@@ -5872,7 +5875,12 @@
 	      
 	      // Create result link
 	      const link = document.createElement('a');
-	      link.href = `/${hit.slug}`;
+	      if (hit.url) {
+	        link.href = hit.url;
+	      } else if (hit.slug) {
+	        // Fallback to slug if url is not available
+	        link.href = `/${hit.slug}`;
+	      }
 	      link.classList.add('ms-result-link');
 	      
 	      // Create result item container
