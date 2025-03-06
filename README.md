@@ -134,7 +134,7 @@ curl \
   -H 'Content-Type: application/json' \
   --data-binary '{
     "description": "Ghost Meilisearch Webhook Handler API key",
-    "actions": ["documents.add", "documents.update", "documents.delete"],
+    "actions": ["documents.add", "documents.update", "documents.delete", "documents.get"],
     "indexes": ["ghost_posts"],
     "expiresAt": null
   }'
