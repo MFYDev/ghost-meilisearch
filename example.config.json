@@ -38,6 +38,14 @@
         "displayed": true
       },
       {
+        "name": "url",
+        "type": "string",
+        "searchable": true,
+        "filterable": false,
+        "sortable": false,
+        "displayed": true
+      },
+      {
         "name": "html",
         "type": "string",
         "searchable": true,
