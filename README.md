@@ -34,7 +34,7 @@ ghost-meilisearch/
 
 You'll need:
 - A Meilisearch instance ([cloud](https://cloud.meilisearch.com) or [self-hosted](https://docs.meilisearch.com/learn/getting_started/installation.html))
-- Content API key from Ghost (for syncing content)
+- Content API key from Ghost (for syncing content), you can get it by following the guide [here](https://ghost.org/docs/content-api/)
 - Search-only API key from Meilisearch (for the search UI)
 
 ### 2. Add Search to Your Theme
