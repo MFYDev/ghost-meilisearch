@@ -103,7 +103,7 @@ Add this to your site's header code injection:
 
 1. Install the CLI:
 ```bash
-npm install -g @fanyangmeng/ghost-meilisearch-cli
+npm install -g @fanyangmeng/ghost-meilisearch-cli@0.1.4
 ```
 
 2. Create `config.json` by using `example.config.json` as a template.
