@@ -126,7 +126,7 @@ To keep your search index in sync with your content, you can deploy the webhook 
 [![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/mfydev/ghost-meilisearch)
 
 1. Click one of the deployment buttons above
-2. Create a new API key in Meilisearch, and set the `actions` to `["documents.add", "documents.update", "documents.delete"]` and `indexes` to `["ghost_posts"]`.
+2. Create a new API key which will be used by the webhook handler in Meilisearch, and set the `actions` to `["documents.add", "documents.update", "documents.delete"]` and `indexes` to `["ghost_posts"]`.
 ```bash
 curl \
   -X POST 'MEILISEARCH_URL/keys' \
@@ -145,7 +145,7 @@ GHOST_URL=https://your-ghost-blog.com
 GHOST_KEY=your-content-api-key  # From Ghost Admin
 GHOST_VERSION=v5.0
 MEILISEARCH_HOST=https://your-meilisearch-host.com
-MEILISEARCH_API_KEY=your-master-api-key  # Meilisearch Master API key
+MEILISEARCH_API_KEY=your-webhook-api-key  # Meilisearch webhook API key
 MEILISEARCH_INDEX_NAME=ghost_posts  # Must match search config
 WEBHOOK_SECRET=your-secret-key  # Generate a random string
 ```
