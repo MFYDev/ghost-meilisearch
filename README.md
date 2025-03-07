@@ -47,13 +47,13 @@ There are two ways to add search to your Ghost site:
 Add to your `config.[environment].json`:
 ```json
 "sodoSearch": {
-    "url": "https://cdn.jsdelivr.net/npm/@fanyangmeng/ghost-meilisearch-search-ui@0.2.2/dist/search.min.js"
+    "url": "https://cdn.jsdelivr.net/npm/@fanyangmeng/ghost-meilisearch-search-ui@0.4.0/dist/search.min.js"
 }
 ```
 
 Or set the environment variable:
 ```bash
-sodoSearch__url=https://cdn.jsdelivr.net/npm/@fanyangmeng/ghost-meilisearch-search-ui@0.2.2/dist/search.min.js
+sodoSearch__url=https://cdn.jsdelivr.net/npm/@fanyangmeng/ghost-meilisearch-search-ui@0.4.0/dist/search.min.js
 ```
 
 #### Option 2: Code Injection
@@ -61,7 +61,7 @@ sodoSearch__url=https://cdn.jsdelivr.net/npm/@fanyangmeng/ghost-meilisearch-sear
 If you're using a managed host like Ghost(Pro), add this to your site's code injection (Settings → Code injection → Site Header):
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@fanyangmeng/ghost-meilisearch-search-ui@0.2.2/dist/search.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@fanyangmeng/ghost-meilisearch-search-ui@0.4.0/dist/search.min.js"></script>
 ```
 
 ### 3. Configure the Search UI
@@ -88,7 +88,7 @@ Remember, never use the default master API key in the below, it will expose your
 Add this to your site's header code injection:
 
 ```html
-<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@fanyangmeng/ghost-meilisearch-search-ui@0.2.2/dist/styles.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@fanyangmeng/ghost-meilisearch-search-ui@0.4.0/dist/styles.css">
 
 <script>
   window.__MS_SEARCH_CONFIG__ = {
@@ -185,12 +185,12 @@ Now your search index will automatically update when you publish, update, or del
 
 | Package | Description | Latest Version |
 |---------|-------------|----------------|
-| [@fanyangmeng/ghost-meilisearch-search-ui](packages/search-ui) | Search interface that matches your Ghost theme |  0.2.2 |
-| [@fanyangmeng/ghost-meilisearch-cli](apps/cli/README.md) | CLI tool for content syncing | 0.1.4 |
-| [@fanyangmeng/ghost-meilisearch-webhook-handler](apps/webhook-handler) | Webhook handler for real-time updates |  0.3.0 |
-| [@fanyangmeng/ghost-meilisearch-config](packages/config) | Configuration utilities |  0.1.3 |
-| [@fanyangmeng/ghost-meilisearch-core](packages/core) | Core functionality |  0.1.3 |
-| [@fanyangmeng/ghost-meilisearch-config](packages/config) | Configuration utilities |  0.1.0 |
+| [@fanyangmeng/ghost-meilisearch-search-ui](packages/search-ui) | Search interface that matches your Ghost theme |  0.4.0  |
+| [@fanyangmeng/ghost-meilisearch-cli](apps/cli/README.md) | CLI tool for content syncing | 0.4.0  |
+| [@fanyangmeng/ghost-meilisearch-webhook-handler](apps/webhook-handler) | Webhook handler for real-time updates |  0.4.0  |
+| [@fanyangmeng/ghost-meilisearch-config](packages/config) | Configuration utilities |  0.4.0 |
+| [@fanyangmeng/ghost-meilisearch-core](packages/core) | Core functionality |  0.4.0 |
+| [@fanyangmeng/ghost-meilisearch-config](packages/config) | Configuration utilities |  0.4.0  |
 
 ## 📄 License
 

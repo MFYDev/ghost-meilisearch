@@ -1,6 +1,6 @@
 {
   "name": "@fanyangmeng/ghost-meilisearch-webhook-handler",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Webhook handler for Ghost-Meilisearch integration",
   "main": "dist/handler.js",
   "types": "dist/handlerd.ts",
@@ -19,8 +19,8 @@
     "test": "jest"
   },
   "dependencies": {
-    "@fanyangmeng/ghost-meilisearch-config": "file:../../packages/config",
-    "@fanyangmeng/ghost-meilisearch-core": "file:../../packages/core",
+    "@fanyangmeng/ghost-meilisearch-config": "^0.4.0",
+    "@fanyangmeng/ghost-meilisearch-core": "^0.4.0",
     "@netlify/functions": "^2.4.1",
     "next": "^14.1.0"
   },
