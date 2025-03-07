@@ -187,7 +187,7 @@ Now your search index will automatically update when you publish, update, or del
 |---------|-------------|----------------|
 | [@fanyangmeng/ghost-meilisearch-search-ui](packages/search-ui) | Search interface that matches your Ghost theme |  0.4.2  |
 | [@fanyangmeng/ghost-meilisearch-cli](apps/cli/README.md) | CLI tool for content syncing | 0.4.2  |
-| [@fanyangmeng/ghost-meilisearch-webhook-handler](apps/webhook-handler) | Webhook handler for real-time updates |  0.4.2  |
+| [@fanyangmeng/ghost-meilisearch-webhook-handler](apps/webhook-handler) | Webhook handler for real-time updates |  0.4.3  |
 | [@fanyangmeng/ghost-meilisearch-config](packages/config) | Configuration utilities |  0.4.2 |
 | [@fanyangmeng/ghost-meilisearch-core](packages/core) | Core functionality |  0.4.2 |
 | [@fanyangmeng/ghost-meilisearch-config](packages/config) | Configuration utilities |  0.4.2  |
