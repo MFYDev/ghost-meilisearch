@@ -2,7 +2,7 @@
 
 Add powerful, lightning-fast search to your Ghost blog with Meilisearch. This integration provides everything you need to create a seamless search experience for your readers.
 
-![demo](static/images/demo.gif)
+![demo](static/images/demo0.5.0.gif)
 
 ## ✨ Features
 
