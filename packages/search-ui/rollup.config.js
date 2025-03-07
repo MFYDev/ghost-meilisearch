@@ -24,6 +24,13 @@ export default {
       sourcemap: true
     }
   ],
+  onwarn(warning, warn) {
+    // Suppress circular dependency warnings from meilisearch
+    if (warning.code === 'CIRCULAR_DEPENDENCY' && warning.message.includes('meilisearch')) {
+      return;
+    }
+    warn(warning);
+  },
   plugins: [
     resolve({
       browser: true

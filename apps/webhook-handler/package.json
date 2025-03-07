@@ -21,7 +21,7 @@
   "dependencies": {
     "@fanyangmeng/ghost-meilisearch-config": "^0.4.2",
     "@fanyangmeng/ghost-meilisearch-core": "^0.4.2",
-    "@netlify/functions": "^2.4.1",
+    "@netlify/functions": "^3.0.1",
     "next": "^15.2.1"
   },
   "devDependencies": {
