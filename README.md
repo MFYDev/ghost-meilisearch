@@ -190,7 +190,6 @@ Now your search index will automatically update when you publish, update, or del
 | [@fanyangmeng/ghost-meilisearch-webhook-handler](apps/webhook-handler) | Webhook handler for real-time updates |  0.4.3  |
 | [@fanyangmeng/ghost-meilisearch-config](packages/config) | Configuration utilities |  0.4.2 |
 | [@fanyangmeng/ghost-meilisearch-core](packages/core) | Core functionality |  0.4.2 |
-| [@fanyangmeng/ghost-meilisearch-config](packages/config) | Configuration utilities |  0.4.2  |
 
 ## 📄 License
 
