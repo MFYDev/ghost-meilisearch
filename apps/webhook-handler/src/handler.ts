@@ -45,26 +45,13 @@ function determineEventType(payload: WebhookPayload): string {
   // Handle normal post events
   if (payload.post?.current) {
     const { post } = payload;
-    const current = post.current;
-    const previous = post.previous;
-
-    // Post is published and public
-    if (current && current.status === 'published' && current.visibility === 'public') {
-      // If it was previously not published or not public, it's a publication
-      if (!previous || previous.status !== 'published' || previous.visibility !== 'public') {
-        return 'post.published';
-      }
-      // Otherwise it's an update
-      return 'post.updated';
+    
+    // If we have a current post, it's either an add or update
+    if (!post.previous || Object.keys(post.previous).length === 0) {
+      return 'post.added';
     }
-
-    // Post was published but is now unpublished
-    if (previous && previous.status === 'published' && previous.visibility === 'public' &&
-        current && (current.status !== 'published' || current.visibility !== 'public')) {
-      return 'post.unpublished';
-    }
-
-    // Default to updated
+    
+    // If we have both current and previous, it's an update
     return 'post.updated';
   }
   
@@ -217,37 +204,73 @@ export const handler: Handler = async (event, context) => {
     const OPERATION_TIMEOUT = 8000;
 
     // Handle different event types
-    if (webhookEventType === 'post.published' || 
-        (webhookEventType === 'post.updated' && isPublishedAndPublic(payload.post?.current))) {
-      
-      // Index the post
-      await withTimeout(
-        manager.indexPost(postId),
-        OPERATION_TIMEOUT,
-        `Indexing post ${postId}`
-      );
-      
-    } else if (webhookEventType === 'post.deleted' || 
-               webhookEventType === 'post.unpublished' ||
-               (payload.post?.previous?.id && (!payload.post?.current || Object.keys(payload.post.current).length === 0)) ||
-               (payload.post?.current && !isPublishedAndPublic(payload.post.current))) {
-      
+    if (webhookEventType === 'post.deleted') {
       // Delete the post from the index
       await withTimeout(
         manager.deletePost(postId),
         OPERATION_TIMEOUT,
         `Deleting post ${postId}`
       );
+      
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ success: true, message: `Post ${postId} deleted from index` })
+      };
+    } else if (['post.added', 'post.updated'].includes(webhookEventType)) {
+      // Simplified post event handling
+      if (payload.post?.current) {
+        const { id, status, visibility, title } = payload.post.current;
+        console.log(`📄 Processing post: "${title || 'Untitled'}" (${id || postId})`);
+        
+        if (status === 'published' && visibility === 'public') {
+          console.log('📝 Indexing published post');
+          await withTimeout(
+            manager.indexPost(postId),
+            OPERATION_TIMEOUT,
+            `Indexing post ${postId}`
+          );
+          console.log('✨ Post indexed successfully');
+          
+          return {
+            statusCode: 200,
+            body: JSON.stringify({ success: true, message: `Post ${postId} indexed successfully` })
+          };
+        } else {
+          console.log('🗑️ Removing unpublished/private post');
+          await withTimeout(
+            manager.deletePost(postId),
+            OPERATION_TIMEOUT,
+            `Deleting post ${postId}`
+          );
+          console.log('✨ Post removed successfully');
+          
+          return {
+            statusCode: 200,
+            body: JSON.stringify({ 
+              success: true, 
+              message: `Post ${postId} removed from index (not published or not public)` 
+            })
+          };
+        }
+      } else {
+        return {
+          statusCode: 200,
+          body: JSON.stringify({ 
+            warning: `Post data missing in payload`, 
+            message: 'No action taken' 
+          })
+        };
+      }
+    } else {
+      // Unknown event type
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ 
+          warning: `Unknown event type: ${webhookEventType}`, 
+          message: 'No action taken' 
+        })
+      };
     }
-
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ 
-        message: 'Webhook processed successfully',
-        postId,
-        action: webhookEventType
-      })
-    };
   } catch (error) {
     console.error('Error processing webhook:', error);
     

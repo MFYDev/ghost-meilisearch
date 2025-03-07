@@ -45,25 +45,13 @@ function determineEventType(payload: WebhookPayload): string {
   // Handle normal post events
   if (payload.post?.current) {
     const { post } = payload;
-    const current = post.current;
-    const previous = post.previous;
     
-    // New post (no previous)
-    if (!previous || Object.keys(previous).length === 0) {
+    // If we have a current post, it's either an add or update
+    if (!post.previous || Object.keys(post.previous).length === 0) {
       return 'post.added';
     }
     
-    // Status change
-    if (current && previous && current.status !== previous.status) {
-      return 'post.status.changed';
-    }
-    
-    // Visibility change
-    if (current && previous && current.visibility !== previous.visibility) {
-      return 'post.visibility.changed';
-    }
-    
-    // Default to updated
+    // If we have both current and previous, it's an update
     return 'post.updated';
   }
   
@@ -365,28 +353,41 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         'Delete post'
       );
       return NextResponse.json({ success: true, message: `Post ${postId} deleted from index` });
-    } else if (['post.added', 'post.updated', 'post.status.changed', 'post.visibility.changed'].includes(eventType)) {
-      // For status or visibility changes, check if the post should be indexed
-      const shouldIndex = isPublishedAndPublic(payload.post?.current);
-      
-      if (shouldIndex) {
-        // Index or update the post
-        await withTimeout(
-          manager.indexPost(postId),
-          30000,
-          'Index post'
-        );
-        return NextResponse.json({ success: true, message: `Post ${postId} indexed` });
+    } else if (['post.added', 'post.updated'].includes(eventType)) {
+      // Simplified post event handling
+      if (payload.post?.current) {
+        const { id, status, visibility, title } = payload.post.current;
+        console.log(`📄 Processing post: "${title || 'Untitled'}" (${id || postId})`);
+        
+        if (status === 'published' && visibility === 'public') {
+          console.log('📝 Indexing published post');
+          await withTimeout(
+            manager.indexPost(postId),
+            30000,
+            'Index post'
+          );
+          console.log('✨ Post indexed successfully');
+          return NextResponse.json({ 
+            success: true, 
+            message: `Post ${postId} indexed successfully` 
+          });
+        } else {
+          console.log('🗑️ Removing unpublished/private post');
+          await withTimeout(
+            manager.deletePost(postId),
+            30000,
+            'Delete post'
+          );
+          console.log('✨ Post removed successfully');
+          return NextResponse.json({ 
+            success: true, 
+            message: `Post ${postId} removed from index (not published or not public)` 
+          });
+        }
       } else {
-        // Remove from index if not published and public
-        await withTimeout(
-          manager.deletePost(postId),
-          30000,
-          'Delete post'
-        );
         return NextResponse.json({ 
-          success: true, 
-          message: `Post ${postId} removed from index (not published or not public)` 
+          warning: `Post data missing in payload`, 
+          message: 'No action taken' 
         });
       }
     } else {
