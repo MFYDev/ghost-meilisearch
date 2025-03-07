@@ -1,12 +1,14 @@
 import GhostContentAPI, { PostOrPage as GhostPost, BrowseResults } from '@tryghost/content-api';
 import { MeiliSearch, Index } from 'meilisearch';
 import { Config, IndexField } from '@fanyangmeng/ghost-meilisearch-config';
+import * as cheerio from 'cheerio';
 
 export interface Post {
   id: string;
   title: string;
   slug: string;
   html: string;
+  plaintext: string;
   excerpt: string;
   url: string;
   feature_image?: string;
@@ -93,14 +95,107 @@ export class GhostMeilisearchManager {
   }
 
   /**
-   * Transform a Ghost post into the format expected by Meilisearch
+   * Transform Ghost post to format suitable for Meilisearch
    */
   private transformPost(post: GhostPost): Post {
+    // Generate plaintext from HTML if not available
+    // Use type assertion since plaintext might not be directly defined in the GhostPost type
+    let plaintext = (post as any).plaintext || '';
+    
+    // Always try to enhance/improve plaintext extraction from HTML
+    // even if plaintext already exists
+    if (post.html) {
+      try {
+        // Load HTML into cheerio
+        const $ = cheerio.load(post.html);
+        
+        // Remove script and style tags with their content
+        $('script, style').remove();
+        
+        // Extract alt text from images and add it to the text
+        $('img').each((_, el) => {
+          const alt = $(el).attr('alt');
+          if (alt) {
+            $(el).replaceWith(` ${alt} `);
+          } else {
+            $(el).remove();
+          }
+        });
+        
+        // Handle special block elements for better formatting
+        // Add line breaks for block elements to preserve structure
+        $('p, div, h1, h2, h3, h4, h5, h6, br, hr, blockquote').each((_, el) => {
+          $(el).append('\n');
+        });
+        
+        // Special handling for list items
+        $('li').each((_, el) => {
+          $(el).prepend('• ');
+          $(el).append('\n');
+        });
+        
+        // Handle tables - add spacing and structure
+        $('tr').each((_, el) => {
+          $(el).append('\n');
+        });
+        
+        // Handle links - keep their text
+        $('a').each((_, el) => {
+          const href = $(el).attr('href');
+          const text = $(el).text().trim();
+          // If the link has text and it's not just the URL, preserve it
+          if (text && href !== text) {
+            $(el).replaceWith(` ${text} `);
+          }
+        });
+        
+        // Get the text content of the body
+        // Cheerio's text() method automatically handles most HTML entities
+        let cleanHtml = $('body').text();
+        
+        // Normalize whitespace
+        cleanHtml = cleanHtml.replace(/\s+/g, ' ').trim();
+        
+        // If we didn't have plaintext or if our extracted text is more comprehensive, use it
+        if (!plaintext || cleanHtml.length > plaintext.length) {
+          plaintext = cleanHtml;
+        }
+      } catch (error) {
+        // Fallback to simple regex if cheerio parsing fails
+        console.error('HTML parsing error:', error);
+        
+        let cleanHtml = post.html
+          // Remove script and style tags with their content
+          .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, ' ')
+          .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, ' ')
+          // Replace link text with its content, preserving spaces
+          .replace(/<a[^>]*>([^<]*)<\/a>/gi, ' $1 ')
+          // Replace inline elements with their content, preserving spaces
+          .replace(/<(strong|b|em|i|mark|span)[^>]*>([^<]*)<\/(strong|b|em|i|mark|span)>/gi, ' $2 ')
+          // Replace all remaining HTML tags with spaces to preserve word boundaries
+          .replace(/<[^>]*>/g, ' ')
+          // Clean up entities and decode HTML entities
+          .replace(/&nbsp;/g, ' ')
+          .replace(/&amp;/g, '&')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'")
+          // Normalize whitespace
+          .replace(/\s+/g, ' ').trim();
+        
+        if (!plaintext || cleanHtml.length > plaintext.length) {
+          plaintext = cleanHtml;
+        }
+      }
+    }
+
     const transformed: Post = {
       id: post.id,
       title: post.title || '',
       slug: post.slug || '',
       html: post.html || '',
+      plaintext: plaintext,
       excerpt: post.excerpt || '',
       url: post.url || '',
       published_at: new Date(post.published_at || Date.now()).getTime(),
