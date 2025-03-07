@@ -1,7 +1,4 @@
 import { Handler } from '@netlify/functions';
-import { loadConfig, validateConfig } from '@fanyangmeng/ghost-meilisearch-config';
-import { GhostMeilisearchManager } from '@fanyangmeng/ghost-meilisearch-core';
-import crypto from 'crypto';
 
 // Webhook payload interface with essential fields
 interface WebhookPayload {
@@ -59,43 +56,34 @@ function determineEventType(payload: WebhookPayload): string {
   return 'unknown';
 }
 
-// Load configuration from environment variables
-function getConfigFromEnv() {
-  const config = {
-    ghost: {
-      url: process.env.GHOST_URL,
-      key: process.env.GHOST_KEY,
-      version: process.env.GHOST_VERSION || 'v5.0'
-    },
-    meilisearch: {
-      host: process.env.MEILISEARCH_HOST,
-      apiKey: process.env.MEILISEARCH_API_KEY,
-      timeout: parseInt(process.env.MEILISEARCH_TIMEOUT || '5000', 10)
-    },
-    index: {
-      name: process.env.MEILISEARCH_INDEX_NAME || 'ghost_posts',
-      primaryKey: 'id'
-    }
-  };
-
-  return validateConfig(config);
-}
-
 // Verify webhook signature
 function verifyWebhookSignature(signature: string, body: string, secret: string): boolean {
   try {
     // Ghost signature format is "sha256=hash, t=timestamp"
     const [signaturePart, timestampPart] = signature.split(', ');
+    if (!signaturePart || !timestampPart) {
+      console.error('Invalid signature format');
+      return false;
+    }
+
     const [, providedSignature] = signaturePart.split('=');
     const [, timestamp] = timestampPart.split('=');
+    
+    if (!providedSignature || !timestamp) {
+      console.error('Could not extract signature or timestamp');
+      return false;
+    }
 
     // Create message by combining stringified body and timestamp
     const message = `${body}${timestamp}`;
     
-    // Create HMAC using the secret and message
-    const hmac = crypto.createHmac('sha256', secret);
+    // For Node.js, we can use the crypto module
+    const hmac = require('crypto').createHmac('sha256', secret);
     hmac.update(message);
     const computedSignature = hmac.digest('hex');
+    
+    console.log('Provided signature:', providedSignature);
+    console.log('Computed signature:', computedSignature);
     
     return providedSignature === computedSignature;
   } catch (error) {
@@ -104,18 +92,159 @@ function verifyWebhookSignature(signature: string, body: string, secret: string)
   }
 }
 
-// Add timeout to a promise
+// Helper function to add timeout to promises
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number, operation: string): Promise<T> {
-  const timeoutPromise = new Promise<T>((_, reject) => {
-    setTimeout(() => reject(new Error(`Operation "${operation}" timed out after ${timeoutMs}ms`)), timeoutMs);
-  });
-  
-  return Promise.race([promise, timeoutPromise]);
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => 
+      setTimeout(() => reject(new Error(`Operation '${operation}' timed out after ${timeoutMs}ms`)), timeoutMs)
+    )
+  ]);
 }
 
 // Check if a post is published and public
 function isPublishedAndPublic(postData: { status?: string; visibility?: string } | undefined): boolean {
-  return !!postData && postData.status === 'published' && postData.visibility === 'public';
+  return postData?.status === 'published' && postData?.visibility === 'public';
+}
+
+// NetlifyGhostMeilisearchManager - A simplified version that uses fetch API
+class NetlifyGhostMeilisearchManager {
+  private ghostUrl: string;
+  private ghostKey: string;
+  private ghostVersion: string;
+  private meilisearchHost: string;
+  private meilisearchApiKey: string;
+  private indexName: string;
+
+  constructor(config: {
+    ghost: { url: string; key: string; version: string };
+    meilisearch: { host: string; apiKey: string; timeout: number };
+    index: { name: string; primaryKey: string };
+  }) {
+    this.ghostUrl = config.ghost.url;
+    this.ghostKey = config.ghost.key;
+    this.ghostVersion = config.ghost.version;
+    this.meilisearchHost = config.meilisearch.host;
+    this.meilisearchApiKey = config.meilisearch.apiKey;
+    this.indexName = config.index.name;
+  }
+
+  /**
+   * Fetch a post from Ghost API
+   */
+  private async fetchPost(postId: string): Promise<any> {
+    const cacheBuster = Date.now();
+    const url = new URL(`${this.ghostUrl}/ghost/api/content/posts/${postId}/`);
+    
+    // Add query parameters
+    url.searchParams.append('key', this.ghostKey);
+    url.searchParams.append('include', 'tags,authors');
+    url.searchParams.append('cache', cacheBuster.toString());
+    
+    const response = await fetch(url.toString(), {
+      headers: {
+        'Accept': 'application/json',
+        'Accept-Version': this.ghostVersion
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch post: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json() as { posts: any[] };
+    if (!data.posts || !Array.isArray(data.posts) || data.posts.length === 0) {
+      throw new Error(`No post found with ID: ${postId}`);
+    }
+    return data.posts[0];
+  }
+
+  /**
+   * Transform a Ghost post to the format expected by Meilisearch
+   */
+  private transformPost(post: any): any {
+    if (!post) {
+      throw new Error('Post data is missing or invalid');
+    }
+
+    // Extract tags and authors
+    const tags = post.tags?.map((tag: any) => tag.name) || [];
+    const authors = post.authors?.map((author: any) => author.name) || [];
+    
+    // Convert dates to timestamps
+    const publishedAt = post.published_at ? new Date(post.published_at).getTime() : null;
+    const updatedAt = post.updated_at ? new Date(post.updated_at).getTime() : null;
+    
+    return {
+      id: post.id,
+      title: post.title,
+      slug: post.slug,
+      html: post.html,
+      excerpt: post.excerpt || '',
+      url: post.url,
+      feature_image: post.feature_image,
+      published_at: publishedAt,
+      updated_at: updatedAt,
+      tags,
+      authors
+    };
+  }
+
+  /**
+   * Index a post in Meilisearch
+   */
+  async indexPost(postId: string): Promise<void> {
+    try {
+      // Add a small delay to ensure Ghost API returns the latest content
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Fetch the post from Ghost
+      const post = await this.fetchPost(postId);
+      
+      // Transform the post
+      const document = this.transformPost(post);
+      
+      // Add the document to Meilisearch
+      const url = new URL(`${this.meilisearchHost}/indexes/${this.indexName}/documents`);
+      const response = await fetch(url.toString(), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.meilisearchApiKey}`
+        },
+        body: JSON.stringify([document])
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json() as { message?: string };
+        throw new Error(`Meilisearch error: ${errorData.message || response.statusText}`);
+      }
+    } catch (error) {
+      throw new Error(`Error indexing post ${postId}: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Delete a post from Meilisearch
+   */
+  async deletePost(postId: string): Promise<void> {
+    try {
+      const url = new URL(`${this.meilisearchHost}/indexes/${this.indexName}/documents/${postId}`);
+      const response = await fetch(url.toString(), {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${this.meilisearchApiKey}`
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json() as { message?: string };
+        throw new Error(`Meilisearch error: ${errorData.message || response.statusText}`);
+      }
+    } catch (error) {
+      throw new Error(`Error deleting post ${postId}: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
 }
 
 // Netlify function handler
@@ -196,9 +325,26 @@ export const handler: Handler = async (event, context) => {
       };
     }
 
-    // Get configuration and initialize manager
-    const config = getConfigFromEnv();
-    const manager = new GhostMeilisearchManager(config);
+    // Create configuration
+    const config = {
+      ghost: {
+        url: process.env.GHOST_URL || '',
+        key: process.env.GHOST_KEY || '',
+        version: process.env.GHOST_VERSION || 'v5.0'
+      },
+      meilisearch: {
+        host: process.env.MEILISEARCH_HOST || '',
+        apiKey: process.env.MEILISEARCH_API_KEY || '',
+        timeout: 5000
+      },
+      index: {
+        name: process.env.MEILISEARCH_INDEX_NAME || 'ghost_posts',
+        primaryKey: 'id'
+      }
+    };
+
+    // Initialize the manager
+    const manager = new NetlifyGhostMeilisearchManager(config);
 
     // Set operation timeout (slightly less than Netlify's 10s timeout)
     const OPERATION_TIMEOUT = 8000;
@@ -248,36 +394,24 @@ export const handler: Handler = async (event, context) => {
             statusCode: 200,
             body: JSON.stringify({ 
               success: true, 
-              message: `Post ${postId} removed from index (not published or not public)` 
+              message: `Post ${postId} removed from index (not published/public)` 
             })
           };
         }
-      } else {
-        return {
-          statusCode: 200,
-          body: JSON.stringify({ 
-            warning: `Post data missing in payload`, 
-            message: 'No action taken' 
-          })
-        };
       }
-    } else {
-      // Unknown event type
-      return {
-        statusCode: 200,
-        body: JSON.stringify({ 
-          warning: `Unknown event type: ${webhookEventType}`, 
-          message: 'No action taken' 
-        })
-      };
     }
+
+    // Handle unknown event types
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: `Unknown or unsupported event type: ${webhookEventType}` })
+    };
   } catch (error) {
     console.error('Error processing webhook:', error);
-    
     return {
       statusCode: 500,
-      body: JSON.stringify({
-        error: 'Internal server error',
+      body: JSON.stringify({ 
+        error: 'Internal server error', 
         details: error instanceof Error ? error.message : 'Unknown error'
       })
     };
