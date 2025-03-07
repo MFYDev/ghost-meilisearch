@@ -16,6 +16,6 @@ crons = []
 # Configure routes - removed as they're not needed for simple Workers
 # Routes are configured in the Cloudflare dashboard
 
-# Configure build
+# Configure build - runs full build process without duplication
 [build]
-command = "npm run build:webhook"
+command = "npm install && npm run build"

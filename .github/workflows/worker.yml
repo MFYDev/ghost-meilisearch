@@ -19,6 +19,3 @@ jobs:
         with:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          preCommands: |
-             npm install
-             npm run build
