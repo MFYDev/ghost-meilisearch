@@ -2468,74 +2468,71 @@
         this.emptyState.classList.remove('active');
         
         try {
+          // Check if the query is wrapped in quotes for exact phrase matching
+          const hasQuotes = query.startsWith('"') && query.endsWith('"');
+          
+          // Extract exact phrases if there are any quotes within the query
+          const exactPhrase = this.extractTextBetweenQuotes(query);
+          
+          // Determine if we need exact phrase matching
+          const isExactMatch = hasQuotes || (exactPhrase !== null);
+          
           // Prepare search parameters
           const searchParams = {
-            limit: 50, // Increased from 20 to 50 to ensure we have enough results to filter
+            limit: 100,
             attributesToHighlight: Object.entries(this.config.searchFields)
               .filter(([_, config]) => config.highlight)
               .map(([field]) => field),
             attributesToRetrieve: ['title', 'url', 'excerpt', 'plaintext', 'tags'],
-            // Use 'all' matching strategy for all searches to require all words to be present
-            matchingStrategy: 'all',
-            // Specify which attributes to search on
             attributesToSearchOn: ['title', 'plaintext', 'excerpt']
           };
-
-          // Check if the query is wrapped in quotes for exact phrase matching
-          const hasQuotes = query.startsWith('"') && query.endsWith('"');
           
-          // Extract exact phrases to support phrase matching
-          const exactPhrase = this.extractTextBetweenQuotes(query);
+          let searchResults = [];
           
-          // Determine the search query and phrase to match
-          let searchQuery = query;
-          let phraseToMatch = query; // By default, try to match the entire query as a phrase
-          
-          // If there's an exact phrase or the query is wrapped in quotes, use that instead
-          if (exactPhrase || hasQuotes) {
-            // Use the exact phrase as the search query (remove quotes if the entire query is quoted)
-            const extractedPhrase = exactPhrase || query.slice(1, -1);
-            searchQuery = extractedPhrase;
-            phraseToMatch = extractedPhrase;
+          // Handle exact phrase search
+          if (isExactMatch) {
+            // Get the phrase to search for
+            const searchPhrase = hasQuotes ? query.slice(1, -1) : exactPhrase;
+            
+            // First, get all documents that contain all the words
+            searchParams.matchingStrategy = 'all';
+            const initialResults = await this.index.search(searchPhrase, searchParams);
+            
+            // Then manually filter for the exact phrase
+            if (initialResults.hits.length > 0) {
+              // Convert search phrase to lowercase for case-insensitive comparison
+              const lowerPhrase = searchPhrase.toLowerCase();
+              
+              // Filter results to only include documents with the exact phrase
+              searchResults = initialResults.hits.filter(hit => {
+                // Check each searchable field for the exact phrase
+                return (
+                  (hit.title && hit.title.toLowerCase().includes(lowerPhrase)) ||
+                  (hit.plaintext && hit.plaintext.toLowerCase().includes(lowerPhrase)) ||
+                  (hit.excerpt && hit.excerpt.toLowerCase().includes(lowerPhrase))
+                );
+              });
+            }
+          } else {
+            // Regular search - use 'all' matching strategy for normal queries
+            searchParams.matchingStrategy = 'last';
+            const results = await this.index.search(query, searchParams);
+            searchResults = results.hits;
           }
-
-          // Perform search
-          const results = await this.index.search(searchQuery, searchParams);
-          
-          // Post-process the results to prioritize exact phrase matches
-          // Convert to lowercase for case-insensitive matching
-          const lowerPhrase = phraseToMatch.toLowerCase();
-          
-          // First, find results that contain the exact phrase
-          const exactMatches = results.hits.filter(hit => {
-            return (
-              (hit.title && hit.title.toLowerCase().includes(lowerPhrase)) ||
-              (hit.plaintext && hit.plaintext.toLowerCase().includes(lowerPhrase)) ||
-              (hit.excerpt && hit.excerpt.toLowerCase().includes(lowerPhrase))
-            );
-          });
-          
-          // Then, include the remaining results that matched all words but not as an exact phrase
-          const otherMatches = results.hits.filter(hit => {
-            return !exactMatches.includes(hit);
-          });
-          
-          // Combine the results: exact matches first, then other matches
-          const finalResults = [...exactMatches, ...otherMatches];
           
           // Update state
           this.state.loading = false;
-          this.state.results = finalResults;
+          this.state.results = searchResults;
           this.state.selectedIndex = -1;
           
           // Update UI
-          this.renderResults(finalResults);
+          this.renderResults(searchResults);
           
           // Hide loading state
           this.loadingState.classList.remove('active');
           
           // Show empty state if no results
-          if (finalResults.length === 0) {
+          if (searchResults.length === 0) {
             this.emptyState.classList.add('active');
           }
         } catch (error) {
