@@ -115,6 +115,19 @@ ghost-meilisearch init --config config.json
 ghost-meilisearch sync --config config.json
 ```
 
+The CLI tool provides several other commands:
+
+```bash
+# Index a single post by ID
+ghost-meilisearch index <post-id> --config config.json
+
+# Delete a single post from the index by ID
+ghost-meilisearch delete <post-id> --config config.json
+
+# Clear all documents from the index
+ghost-meilisearch clear --config config.json
+```
+
 ### 5. Set Up Real-Time Updates (Optional)
 
 To keep your search index in sync with your content, you can deploy the webhook handler to your preferred platform:
@@ -125,7 +138,7 @@ To keep your search index in sync with your content, you can deploy the webhook 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/mfydev/ghost-meilisearch)
 [![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/mfydev/ghost-meilisearch)
 
-1. Click one of the deployment buttons above
+1. Fork this repository
 2. Create a new API key which will be used by the webhook handler in Meilisearch, and set the `actions` to `["documents.add", "documents.get", "documents.delete"]` and `indexes` to `["ghost_posts"]`.
 ```bash
 curl \
@@ -139,7 +152,8 @@ curl \
     "expiresAt": null
   }'
 ```
-3. Set these environment variables in your platform's dashboard:
+3. Click one of the deployment buttons above
+4. Set these environment variables in your platform's dashboard:
 ```env
 GHOST_URL=https://your-ghost-blog.com
 GHOST_KEY=your-content-api-key  # From Ghost Admin
@@ -166,37 +180,6 @@ WEBHOOK_SECRET=your-secret-key  # Generate a random string
 Add all four events (Post published, updated, deleted, unpublished) pointing to your webhook URL.
 
 Now your search index will automatically update when you publish, update, or delete posts!
-
-## 🔍 Advanced Usage
-
-### CLI Commands
-
-The CLI tool provides several commands:
-
-```bash
-# Initialize the index with the schema from config.json
-ghost-meilisearch init --config config.json
-
-# Sync all posts from Ghost to Meilisearch
-ghost-meilisearch sync --config config.json
-
-# Index a single post by ID
-ghost-meilisearch index <post-id> --config config.json
-
-# Delete a single post from the index by ID
-ghost-meilisearch delete <post-id> --config config.json
-
-# Clear all documents from the index
-ghost-meilisearch clear --config config.json
-```
-
-## 🔒 Security
-
-- **Never** use your Meilisearch master key in the frontend
-- Create a search-only API key with minimal permissions for the frontend
-- Use environment variables for sensitive keys in production
-- Enable the webhook secret to prevent unauthorized index updates
-- If self-hosting Meilisearch, place it behind a reverse proxy with HTTPS
 
 ## 📦 Packages
 
