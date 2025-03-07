@@ -58,7 +58,7 @@
   --ms-search-border: rgba(255, 255, 255, 0.08);
   --ms-search-shadow: rgba(0, 0, 0, 0.3);
   --ms-search-placeholder: rgb(161, 161, 161);
-  --ms-search-highlight: var(--ghost-accent-color, #818cf8);
+  --ms-search-highlight: var(--ghost-accent-color, #ff1a75);
   --ms-search-result-bg: rgb(38, 38, 38);
   --ms-search-result-hover: color-mix(in srgb, var(--ms-search-highlight) 8%, transparent);
   --ms-search-result-border: rgba(255, 255, 255, 0.08);
