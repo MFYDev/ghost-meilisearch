@@ -1,6 +1,6 @@
 {
   "name": "@fanyangmeng/ghost-meilisearch",
-  "version": "0.4.2",
+  "version": "0.5.0",
   "description": "Meilisearch integration for Ghost CMS",
   "main": "dist/index.js",
   "type": "module",
@@ -63,10 +63,12 @@
     "@fanyangmeng/ghost-meilisearch-config": "file:packages/config",
     "@fanyangmeng/ghost-meilisearch-core": "file:packages/core",
     "@fanyangmeng/ghost-meilisearch-search-ui": "file:packages/search-ui",
-    "@fanyangmeng/ghost-meilisearch-webhook-handler": "file:apps/webhook-handler"
+    "@fanyangmeng/ghost-meilisearch-webhook-handler": "file:apps/webhook-handler",
+    "cheerio": "^1.0.0"
   },
   "devDependencies": {
     "@tryghost/content-api": "^1.11.21",
+    "@types/cheerio": "^0.22.35",
     "axios": "^1.8.2",
     "concurrently": "^9.1.2",
     "eslint": "^9.21.0",

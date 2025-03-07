@@ -46,7 +46,7 @@
         "displayed": true
       },
       {
-        "name": "html",
+        "name": "excerpt",
         "type": "string",
         "searchable": true,
         "filterable": false,
@@ -54,7 +54,7 @@
         "displayed": true
       },
       {
-        "name": "excerpt",
+        "name": "plaintext",
         "type": "string",
         "searchable": true,
         "filterable": false,
@@ -67,22 +67,6 @@
         "searchable": false,
         "filterable": false,
         "sortable": false,
-        "displayed": true
-      },
-      {
-        "name": "published_at",
-        "type": "date",
-        "searchable": false,
-        "filterable": true,
-        "sortable": true,
-        "displayed": true
-      },
-      {
-        "name": "updated_at",
-        "type": "date",
-        "searchable": false,
-        "filterable": true,
-        "sortable": true,
         "displayed": true
       },
       {

@@ -19,6 +19,17 @@
   --shadow-lg: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
 }
 
+/* Highlighted search terms */
+.ms-highlight, em {
+  font-style: normal;
+  font-weight: 600;
+  background-color: color-mix(in srgb, var(--ms-search-highlight) 20%, transparent);
+  color: var(--ms-search-text);
+  border-radius: 2px;
+  padding: 0 2px;
+  margin: 0 -1px;
+}
+
 /* Light theme */
 #ms-search-wrapper.light {
   --ms-search-bg: rgb(252, 252, 252);
