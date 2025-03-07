@@ -12,6 +12,8 @@ Add powerful, lightning-fast search to your Ghost blog with Meilisearch. This in
 - 🪝 **Real-time Updates**: Keep your search index in sync with your content via webhooks
 - 🌗 **Dark/Light Modes**: Automatically matches your Ghost theme's color scheme
 - 🔐 **Secure**: Uses search-only API keys for frontend, admin keys for backend
+- 🍭 **Highlight Search Result**: Highlight the search result with the exact phrase
+- 📈 **Improved Plain Text Search Result**: Improved plain text search result powered by cheerio
 
 ## Project Structure
 
