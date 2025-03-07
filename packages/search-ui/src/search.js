@@ -8,17 +8,24 @@ import './styles.css';
 class GhostMeilisearchSearch {
   constructor(config = {}) {
     // Default configuration
-    this.config = {
-      meilisearchHost: 'http://localhost:7700',
-      meilisearchApiKey: '',
-      indexName: 'ghost_posts',
-      theme: 'system', // 'light', 'dark', 'system'
+    const defaultConfig = {
+      meilisearchHost: null,
+      meilisearchApiKey: null,
+      indexName: null,
       commonSearches: [],
+      theme: 'system',
+      enableHighlighting: true,
       searchFields: {
-        title: { weight: 4, highlight: true },
-        excerpt: { weight: 2, highlight: true },
+        title: { weight: 5, highlight: true },
+        plaintext: { weight: 4, highlight: true },
+        excerpt: { weight: 3, highlight: true },
         html: { weight: 1, highlight: true }
-      },
+      }
+    };
+
+    // Merge default config with user config
+    this.config = {
+      ...defaultConfig,
       ...config
     };
 
@@ -32,20 +39,32 @@ class GhostMeilisearchSearch {
       error: null
     };
 
-    // Initialize Meilisearch client
+    // Initialize MeiliSearch client
     this.client = new MeiliSearch({
       host: this.config.meilisearchHost,
       apiKey: this.config.meilisearchApiKey
     });
 
-    // Get the index
+    // Get index
     this.index = this.client.index(this.config.indexName);
 
     // Create DOM elements
     this.createDOMElements();
 
+    // Apply theme
+    this.applyTheme();
+
+    // Setup color scheme observer
+    this.setupColorSchemeObserver();
+
     // Add event listeners
     this.addEventListeners();
+
+    // Populate common searches
+    this.populateCommonSearches();
+
+    // Adjust modal for screen size
+    this.adjustModalForScreenSize();
   }
 
   /**
@@ -398,6 +417,17 @@ class GhostMeilisearchSearch {
   }
 
   /**
+   * Extract text between double quotes for exact phrase matching
+   * @param {string} text - The text to extract from
+   * @returns {string|null} The extracted text or null if no quoted phrase found
+   */
+  extractTextBetweenQuotes(text) {
+    if (!text) return null;
+    const match = text.match(/"([^"]+)"/);
+    return match ? match[1] : null;
+  }
+
+  /**
    * Perform search with current query
    */
   async performSearch() {
@@ -432,28 +462,72 @@ class GhostMeilisearchSearch {
     try {
       // Prepare search parameters
       const searchParams = {
-        limit: 10,
+        limit: 50, // Increased from 20 to 50 to ensure we have enough results to filter
         attributesToHighlight: Object.entries(this.config.searchFields)
           .filter(([_, config]) => config.highlight)
-          .map(([field]) => field)
+          .map(([field]) => field),
+        attributesToRetrieve: ['title', 'url', 'excerpt', 'plaintext', 'tags'],
+        // Use 'all' matching strategy for all searches to require all words to be present
+        matchingStrategy: 'all',
+        // Specify which attributes to search on
+        attributesToSearchOn: ['title', 'plaintext', 'excerpt']
       };
 
+      // Check if the query is wrapped in quotes for exact phrase matching
+      const hasQuotes = query.startsWith('"') && query.endsWith('"');
+      
+      // Extract exact phrases to support phrase matching
+      const exactPhrase = this.extractTextBetweenQuotes(query);
+      
+      // Determine the search query and phrase to match
+      let searchQuery = query;
+      let phraseToMatch = query; // By default, try to match the entire query as a phrase
+      
+      // If there's an exact phrase or the query is wrapped in quotes, use that instead
+      if (exactPhrase || hasQuotes) {
+        // Use the exact phrase as the search query (remove quotes if the entire query is quoted)
+        const extractedPhrase = exactPhrase || query.slice(1, -1);
+        searchQuery = extractedPhrase;
+        phraseToMatch = extractedPhrase;
+      }
+
       // Perform search
-      const results = await this.index.search(query, searchParams);
+      const results = await this.index.search(searchQuery, searchParams);
+      
+      // Post-process the results to prioritize exact phrase matches
+      // Convert to lowercase for case-insensitive matching
+      const lowerPhrase = phraseToMatch.toLowerCase();
+      
+      // First, find results that contain the exact phrase
+      const exactMatches = results.hits.filter(hit => {
+        return (
+          (hit.title && hit.title.toLowerCase().includes(lowerPhrase)) ||
+          (hit.plaintext && hit.plaintext.toLowerCase().includes(lowerPhrase)) ||
+          (hit.excerpt && hit.excerpt.toLowerCase().includes(lowerPhrase))
+        );
+      });
+      
+      // Then, include the remaining results that matched all words but not as an exact phrase
+      const otherMatches = results.hits.filter(hit => {
+        return !exactMatches.includes(hit);
+      });
+      
+      // Combine the results: exact matches first, then other matches
+      const finalResults = [...exactMatches, ...otherMatches];
       
       // Update state
       this.state.loading = false;
-      this.state.results = results.hits;
+      this.state.results = finalResults;
       this.state.selectedIndex = -1;
       
       // Update UI
-      this.renderResults(results.hits);
+      this.renderResults(finalResults);
       
       // Hide loading state
       this.loadingState.classList.remove('active');
       
       // Show empty state if no results
-      if (results.hits.length === 0) {
+      if (finalResults.length === 0) {
         this.emptyState.classList.add('active');
       }
     } catch (error) {
@@ -473,6 +547,18 @@ class GhostMeilisearchSearch {
    */
   renderResults(hits) {
     this.hitsList.innerHTML = '';
+    
+    // Get the current search query
+    const query = this.state.query.trim();
+    
+    // Extract exact phrase if present
+    const exactPhrase = this.extractTextBetweenQuotes(query);
+    
+    // Check if the query is wrapped in quotes
+    const hasQuotes = query.startsWith('"') && query.endsWith('"');
+    
+    // Determine the phrase to highlight
+    const phraseToHighlight = exactPhrase || (hasQuotes ? query.slice(1, -1) : query);
     
     hits.forEach(hit => {
       const li = document.createElement('li');
@@ -505,29 +591,189 @@ class GhostMeilisearchSearch {
       const title = document.createElement('h3');
       title.classList.add('ms-result-title');
       
-      // Clean up highlighting if needed
-      let titleContent = hit._highlightResult?.title?.value || hit.title;
-      titleContent = titleContent.replace(/<em>(.*?)<\/em>/g, '<em>$1</em>');
+      // Get the title content
+      let titleContent = hit.title || 'Untitled';
+      
+      // Apply custom highlighting to title if enabled
+      if (query && this.config.enableHighlighting) {
+        // First use MeiliSearch's highlighting if available
+        if (hit._highlightResult?.title?.value) {
+          titleContent = hit._highlightResult.title.value;
+          // Clean up MeiliSearch highlighting format
+          titleContent = titleContent.replace(/<em>(.*?)<\/em>/g, '<em>$1</em>');
+        } else {
+          // Apply our own highlighting
+          // For exact phrase searches, highlight the entire phrase first
+          if (phraseToHighlight && phraseToHighlight.length > 2) {
+            try {
+              // Escape special regex characters
+              const escapedPhrase = phraseToHighlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+              
+              // Create a case-insensitive regex for the exact phrase
+              const phraseRegex = new RegExp(`(${escapedPhrase})`, 'gi');
+              
+              // Apply highlighting
+              titleContent = titleContent.replace(phraseRegex, '<em>$1</em>');
+            } catch (e) {
+              console.warn('Error highlighting exact phrase in title:', e);
+            }
+          }
+          
+          // Then highlight individual words
+          if (!exactPhrase && !hasQuotes) {
+            const words = query.split(/\s+/);
+            
+            // Sort words by length in descending order to handle longer phrases first
+            words.sort((a, b) => b.length - a.length);
+            
+            for (const word of words) {
+              if (word.length < 2) continue; // Skip very short words
+              try {
+                const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const regex = new RegExp(`(${escapedWord})`, 'gi');
+                
+                // Don't re-highlight words that are already part of a highlighted phrase
+                titleContent = titleContent.replace(
+                  regex, 
+                  function(match) {
+                    // Only highlight if not already inside an em tag
+                    if (/<em[^>]*>[^<]*$/i.test(titleContent.substring(0, titleContent.indexOf(match))) &&
+                        /^[^<]*<\/em>/i.test(titleContent.substring(titleContent.indexOf(match) + match.length))) {
+                      return match; // Already highlighted
+                    }
+                    return '<em>' + match + '</em>'; // Use concatenation instead of $&
+                  }
+                );
+              } catch (e) {
+                console.warn('Error highlighting word in title:', word, e);
+              }
+            }
+          }
+        }
+      }
+      
       title.innerHTML = titleContent;
       
       // Create excerpt
       const excerpt = document.createElement('p');
       excerpt.classList.add('ms-result-excerpt');
       
-      // Use highlighted excerpt if available, otherwise use regular excerpt
-      if (hit._highlightResult?.excerpt?.value) {
-        let excerptContent = hit._highlightResult.excerpt.value;
-        excerptContent = excerptContent.replace(/<em>(.*?)<\/em>/g, '<em>$1</em>');
-        excerpt.innerHTML = excerptContent;
-      } else if (hit._highlightResult?.html?.value) {
-        // If excerpt isn't highlighted but HTML is, use a snippet from HTML
-        const div = document.createElement('div');
-        div.innerHTML = hit._highlightResult.html.value;
-        const text = div.textContent || '';
-        excerpt.innerHTML = text.substring(0, 150) + '...';
-      } else {
-        excerpt.textContent = hit.excerpt || '';
+      // Always use plaintext as our primary text content source
+      let textContent = hit.plaintext || '';
+      
+      // If for some reason plaintext is empty, use excerpt as fallback
+      if (!textContent && hit.excerpt) {
+        textContent = hit.excerpt;
       }
+      
+      // Apply highlighting to excerpt
+      let excerptContent = textContent;
+      
+      if (this.config.enableHighlighting) {
+        // First use MeiliSearch's highlighting if available
+        if (hit._highlightResult?.plaintext?.value) {
+          excerptContent = hit._highlightResult.plaintext.value;
+          // Clean up MeiliSearch highlighting format
+          excerptContent = excerptContent.replace(/<em>(.*?)<\/em>/g, '<em>$1</em>');
+        } else if (hit._highlightResult?.excerpt?.value) {
+          excerptContent = hit._highlightResult.excerpt.value;
+          excerptContent = excerptContent.replace(/<em>(.*?)<\/em>/g, '<em>$1</em>');
+        } else {
+          // Apply our own highlighting
+          // For exact phrase searches, try to find and highlight the phrase
+          if (phraseToHighlight && phraseToHighlight.length > 2) {
+            try {
+              // Find the position of the phrase in the text (case-insensitive)
+              const lowerText = textContent.toLowerCase();
+              const lowerPhrase = phraseToHighlight.toLowerCase();
+              const phrasePosition = lowerText.indexOf(lowerPhrase);
+              
+              if (phrasePosition !== -1) {
+                // Extract a portion of text around the phrase for context
+                const startPos = Math.max(0, phrasePosition - 60);
+                const endPos = Math.min(textContent.length, phrasePosition + phraseToHighlight.length + 60);
+                excerptContent = textContent.substring(startPos, endPos);
+                
+                // Add ellipsis if needed
+                if (startPos > 0) excerptContent = '...' + excerptContent;
+                if (endPos < textContent.length) excerptContent = excerptContent + '...';
+                
+                // Highlight the phrase
+                const escapedPhrase = phraseToHighlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const phraseRegex = new RegExp(`(${escapedPhrase})`, 'gi');
+                excerptContent = excerptContent.replace(phraseRegex, '<em>$1</em>');
+              }
+            } catch (e) {
+              console.warn('Error highlighting exact phrase in excerpt:', e);
+            }
+          }
+          
+          // If no exact phrase or it wasn't found, highlight individual words
+          if ((!phraseToHighlight || excerptContent === textContent) && query) {
+            const words = query.split(/\s+/);
+            
+            // Sort words by length in descending order
+            words.sort((a, b) => b.length - a.length);
+            
+            // Find the first occurrence of any word to center the excerpt
+            let firstMatchPos = -1;
+            let matchedWord = '';
+            
+            for (const word of words) {
+              if (word.length < 2) continue;
+              const lowerText = textContent.toLowerCase();
+              const lowerWord = word.toLowerCase();
+              const wordPos = lowerText.indexOf(lowerWord);
+              if (wordPos !== -1 && (firstMatchPos === -1 || wordPos < firstMatchPos)) {
+                firstMatchPos = wordPos;
+                matchedWord = word;
+              }
+            }
+            
+            // If we found a match, extract text around it
+            if (firstMatchPos !== -1) {
+              const startPos = Math.max(0, firstMatchPos - 60);
+              const endPos = Math.min(textContent.length, firstMatchPos + matchedWord.length + 60);
+              excerptContent = textContent.substring(startPos, endPos);
+              
+              // Add ellipsis if needed
+              if (startPos > 0) excerptContent = '...' + excerptContent;
+              if (endPos < textContent.length) excerptContent = excerptContent + '...';
+              
+              // Highlight all matching words
+              for (const word of words) {
+                if (word.length < 2) continue;
+                try {
+                  const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                  const regex = new RegExp(`(${escapedWord})`, 'gi');
+                  
+                  // Don't re-highlight words that are already part of a highlighted phrase
+                  excerptContent = excerptContent.replace(
+                    regex, 
+                    function(match) {
+                      // Only highlight if not already inside an em tag
+                      if (/<em[^>]*>[^<]*$/i.test(excerptContent.substring(0, excerptContent.indexOf(match))) &&
+                          /^[^<]*<\/em>/i.test(excerptContent.substring(excerptContent.indexOf(match) + match.length))) {
+                        return match; // Already highlighted
+                      }
+                      return '<em>' + match + '</em>'; // Use concatenation instead of $&
+                    }
+                  );
+                } catch (e) {
+                  console.warn('Error highlighting word in excerpt:', word, e);
+                }
+              }
+            }
+          }
+        }
+      } else {
+        // If highlighting is disabled, just use a simple excerpt
+        if (textContent.length > 150) {
+          excerptContent = textContent.substring(0, 150) + '...';
+        }
+      }
+      
+      excerpt.innerHTML = excerptContent;
       
       // Append elements
       resultItem.appendChild(title);
