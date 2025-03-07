@@ -16,6 +16,6 @@ crons = []
 # Configure routes - removed as they're not needed for simple Workers
 # Routes are configured in the Cloudflare dashboard
 
-# Configure build - runs full build process without duplication
+# Configure build - optimized for Cloudflare deployments
 [build]
-command = "npm install && npm run build"
+command = "npm install && npm run build:cloudflare"

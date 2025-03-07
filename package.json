@@ -16,6 +16,7 @@
     "build:cli": "cd apps/cli && npm run build",
     "build:webhook": "cd apps/webhook-handler && npm run build",
     "build:search-ui": "cd packages/search-ui && npm run build",
+    "build:cloudflare": "npm run build:config && npm run build:core && cd apps/webhook-handler && npm run build:cloudflare-only",
     "clean": "npm run clean:all",
     "clean:all": "npm run clean:config && npm run clean:core && npm run clean:cli && npm run clean:webhook && npm run clean:search-ui",
     "clean:config": "cd packages/config && npm run clean",
