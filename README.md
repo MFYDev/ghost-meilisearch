@@ -36,7 +36,7 @@ You'll need:
 - A Meilisearch instance ([cloud](https://cloud.meilisearch.com) or [self-hosted](https://docs.meilisearch.com/learn/getting_started/installation.html))
 - Content API key from Ghost (for syncing content), you can get it by following the guide [here](https://ghost.org/docs/content-api/)
 - Search-only API key from Meilisearch (for the search UI)
-- Writing API key for the index ghost_post from Meilisearch (for the webhook handler)
+- Writing API key for the index `ghost_posts` from Meilisearch (for the webhook handler)
 
 ### 2. Add Search to Your Theme
 
@@ -175,7 +175,7 @@ WEBHOOK_SECRET=your-secret-key  # Generate a random string
 |----------|-------------------|
 | Netlify | `https://your-site.netlify.app/.netlify/functions/handler` |
 | Vercel | `https://your-app.vercel.app/api/webhook` |
-| Cloudflare Workers | `https://ghost-meilisearch-webhook.[your-subdomain].workers.dev` |
+| Cloudflare Workers | `https://your-worker.[your-subdomain].workers.dev` |
 
 Add all four events (Post published, updated, deleted, unpublished) pointing to your webhook URL.
 
