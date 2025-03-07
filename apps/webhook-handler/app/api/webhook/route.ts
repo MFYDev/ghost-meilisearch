@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import * as cheerio from 'cheerio';
 
 // Set the runtime to edge for better performance
 export const runtime = 'edge';
@@ -197,11 +198,91 @@ class GhostMeilisearchManager {
     const publishedAt = post.published_at ? new Date(post.published_at).getTime() : null;
     const updatedAt = post.updated_at ? new Date(post.updated_at).getTime() : null;
     
+    // Generate plaintext from HTML
+    let plaintext = '';
+    if (post.html) {
+      try {
+        // Load HTML into cheerio
+        const $ = cheerio.load(post.html);
+        
+        // Remove script and style tags with their content
+        $('script, style').remove();
+        
+        // Extract alt text from images and add it to the text
+        $('img').each((_, el) => {
+          const alt = $(el).attr('alt');
+          if (alt) {
+            $(el).replaceWith(` ${alt} `);
+          } else {
+            $(el).remove();
+          }
+        });
+        
+        // Handle special block elements for better formatting
+        // Add line breaks for block elements to preserve structure
+        $('p, div, h1, h2, h3, h4, h5, h6, br, hr, blockquote').each((_, el) => {
+          $(el).append('\n');
+        });
+        
+        // Special handling for list items
+        $('li').each((_, el) => {
+          $(el).prepend('• ');
+          $(el).append('\n');
+        });
+        
+        // Handle tables - add spacing and structure
+        $('tr').each((_, el) => {
+          $(el).append('\n');
+        });
+        
+        // Handle links - keep their text
+        $('a').each((_, el) => {
+          const href = $(el).attr('href');
+          const text = $(el).text().trim();
+          // If the link has text and it's not just the URL, preserve it
+          if (text && href !== text) {
+            $(el).replaceWith(` ${text} `);
+          }
+        });
+        
+        // Get the text content of the body
+        // Cheerio's text() method automatically handles most HTML entities
+        plaintext = $('body').text();
+        
+        // Normalize whitespace
+        plaintext = plaintext.replace(/\s+/g, ' ').trim();
+      } catch (error) {
+        // Fallback to simple regex if cheerio parsing fails
+        console.error('HTML parsing error:', error);
+        
+        plaintext = post.html
+          // Remove script and style tags with their content
+          .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, ' ')
+          .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, ' ')
+          // Replace link text with its content, preserving spaces
+          .replace(/<a[^>]*>([^<]*)<\/a>/gi, ' $1 ')
+          // Replace inline elements with their content, preserving spaces
+          .replace(/<(strong|b|em|i|mark|span)[^>]*>([^<]*)<\/(strong|b|em|i|mark|span)>/gi, ' $2 ')
+          // Replace all remaining HTML tags with spaces to preserve word boundaries
+          .replace(/<[^>]*>/g, ' ')
+          // Clean up entities and decode HTML entities
+          .replace(/&nbsp;/g, ' ')
+          .replace(/&amp;/g, '&')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'")
+          // Normalize whitespace
+          .replace(/\s+/g, ' ').trim();
+      }
+    }
+    
     return {
       id: post.id,
       title: post.title,
       slug: post.slug,
       html: post.html,
+      plaintext: plaintext,
       excerpt: post.excerpt || '',
       url: post.url,
       feature_image: post.feature_image,
