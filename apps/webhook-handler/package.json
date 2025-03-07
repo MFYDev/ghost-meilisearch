@@ -5,7 +5,7 @@
   "main": "dist/handler.js",
   "types": "dist/handlerd.ts",
   "type": "module",
-  "packageManager": "npm@10.9.2",
+  "packageManager": "npm@11.2.0",
   "scripts": {
     "build": "npm run build:netlify && npm run build:cloudflare && npm run build:vercel",
     "build:netlify": "tsc -p tsconfig.netlify.json",

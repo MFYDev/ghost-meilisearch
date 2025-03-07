@@ -4,7 +4,7 @@
   "description": "Meilisearch integration for Ghost CMS",
   "main": "dist/index.js",
   "type": "module",
-  "packageManager": "npm@10.9.2",
+  "packageManager": "npm@11.2.0",
   "bin": {
     "ghost-meilisearch": "./apps/cli/dist/index.js"
   },
@@ -67,12 +67,12 @@
   },
   "devDependencies": {
     "@tryghost/content-api": "^1.11.21",
-    "axios": "^1.8.1",
+    "axios": "^1.8.2",
     "concurrently": "^9.1.2",
     "eslint": "^9.21.0",
     "glob": "^11.0.1",
     "rimraf": "^6.0.1",
     "turbo": "^2.4.4",
-    "typescript": "^5.3.3"
+    "typescript": "^5.8.2"
   }
 }

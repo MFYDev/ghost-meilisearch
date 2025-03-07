@@ -16,19 +16,19 @@
     "test": "jest"
   },
   "dependencies": {
-    "@fanyangmeng/ghost-meilisearch-config": "^0.4.0",
-    "@fanyangmeng/ghost-meilisearch-core": "^0.4.0",
+    "@fanyangmeng/ghost-meilisearch-config": "^0.4.2",
+    "@fanyangmeng/ghost-meilisearch-core": "^0.4.2",
     "chalk": "^5.3.0",
     "commander": "^11.1.0",
     "ora": "^7.0.1"
   },
   "devDependencies": {
-    "@types/jest": "^29.5.12",
-    "@types/node": "^20.11.17",
-    "eslint": "^8.56.0",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.13.9",
+    "eslint": "^9.21.0",
     "jest": "^29.7.0",
-    "rimraf": "^5.0.5",
-    "ts-jest": "^29.1.2",
-    "typescript": "^5.3.3"
+    "rimraf": "^6.0.1",
+    "ts-jest": "^29.2.6",
+    "typescript": "^5.8.2"
   }
 }

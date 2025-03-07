@@ -11,16 +11,16 @@
     "lint": "eslint src --ext .js"
   },
   "dependencies": {
-    "meilisearch": "^0.37.0"
+    "meilisearch": "^0.49.0"
   },
   "devDependencies": {
-    "@rollup/plugin-commonjs": "^25.0.7",
-    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-commonjs": "^28.0.3",
+    "@rollup/plugin-node-resolve": "^16.0.0",
     "@rollup/plugin-terser": "^0.4.4",
-    "eslint": "^8.56.0",
-    "postcss": "^8.4.35",
-    "rimraf": "^5.0.5",
-    "rollup": "^4.9.6",
+    "eslint": "^9.21.0",
+    "postcss": "^8.5.3",
+    "rimraf": "^6.0.1",
+    "rollup": "^4.34.9",
     "rollup-plugin-postcss": "^4.0.2"
   }
 }
