@@ -69,7 +69,7 @@
   "devDependencies": {
     "@tryghost/content-api": "^1.11.21",
     "@types/cheerio": "^0.22.35",
-    "axios": "^1.8.3",
+    "axios": "^1.8.4",
     "concurrently": "^9.1.2",
     "eslint": "^9.21.0",
     "glob": "^11.0.1",
