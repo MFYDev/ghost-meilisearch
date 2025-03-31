@@ -164,7 +164,11 @@ export default function RootLayout({
               meilisearchHost: "https://meilisearch.fanyangmeng.blog/",
               meilisearchApiKey: "2f7dda2f9e23c3a842ecde52401cb088d76d0f6bae28b523b9717f293705aaa6",
               indexName: "ghost_posts",
-              theme: "system"
+              theme: "system",
+              enableHighlighting: true,
+              enableAiSearch: true,
+              aiSearchEmbedder: "ghost-posts-openai",
+              aiSearchLimit: 3
             };
           `}
         </Script>
