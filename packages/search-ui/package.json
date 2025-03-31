@@ -1,6 +1,6 @@
 {
   "name": "@fanyangmeng/ghost-meilisearch-search-ui",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Search UI for Ghost-Meilisearch integration",
   "main": "dist/search.js",
   "type": "module",
