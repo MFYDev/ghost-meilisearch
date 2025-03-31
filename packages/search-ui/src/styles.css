@@ -472,10 +472,30 @@
   border-color: var(--ms-search-highlight);
 }
 
-.ms-hits-list {
+/* Styles for both AI and Normal result lists */
+.ms-ai-hits-list,
+.ms-normal-hits-list {
   list-style: none;
   padding: 0;
   margin: 0;
+}
+
+/* Section containers */
+.ms-ai-results-section,
+.ms-normal-results-section {
+  padding: 0.5rem 0;
+  padding-right: 6px; /* Align with common searches padding */
+  margin: 0 0 1rem 0;
+}
+
+/* Section titles */
+.ms-results-section-title {
+  color: var(--ms-search-placeholder); /* Use placeholder color for less emphasis */
+  font-size: 0.8rem; /* Slightly larger than kbd hints */
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  margin: 0 0 0.75rem;
+  text-transform: uppercase;
 }
 
 .ms-result-link {
