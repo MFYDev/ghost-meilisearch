@@ -49,13 +49,13 @@ There are two ways to add search to your Ghost site:
 Add to your `config.[environment].json`:
 ```json
 "sodoSearch": {
-    "url": "https://cdn.jsdelivr.net/npm/@fanyangmeng/ghost-meilisearch-search-ui@1.0.0/dist/search.min.js"
+    "url": "https://cdn.jsdelivr.net/npm/@fanyangmeng/ghost-meilisearch-search-ui@1.0.1/dist/search.min.js"
 }
 ```
 
 Or set the environment variable:
 ```bash
-sodoSearch__url=https://cdn.jsdelivr.net/npm/@fanyangmeng/ghost-meilisearch-search-ui@1.0.0/dist/search.min.js
+sodoSearch__url=https://cdn.jsdelivr.net/npm/@fanyangmeng/ghost-meilisearch-search-ui@1.0.1/dist/search.min.js
 ```
 
 #### Option 2: Code Injection
@@ -63,7 +63,7 @@ sodoSearch__url=https://cdn.jsdelivr.net/npm/@fanyangmeng/ghost-meilisearch-sear
 If you're using a managed host like Ghost(Pro), add this to your site's code injection (Settings → Code injection → Site Header):
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@fanyangmeng/ghost-meilisearch-search-ui@1.0.0/dist/search.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@fanyangmeng/ghost-meilisearch-search-ui@1.0.1/dist/search.min.js"></script>
 ```
 
 ### 3. Configure the Search UI
@@ -118,7 +118,7 @@ Add this to your site's header code injection:
 
 1. Install the CLI:
 ```bash
-npm install -g @fanyangmeng/ghost-meilisearch-cli@0.5.0
+npm install -g @fanyangmeng/ghost-meilisearch-cli@1.0.0
 ```
 
 2. Create `config.json` by using `example.config.json` as a template.
@@ -199,7 +199,7 @@ Now your search index will automatically update when you publish, update, or del
 
 | Package | Description | Latest Version |
 |---------|-------------|----------------|
-| [@fanyangmeng/ghost-meilisearch-search-ui](packages/search-ui) | Search interface that matches your Ghost theme |  1.0.0  |
+| [@fanyangmeng/ghost-meilisearch-search-ui](packages/search-ui) | Search interface that matches your Ghost theme |  1.0.1  |
 | [@fanyangmeng/ghost-meilisearch-cli](apps/cli/README.md) | CLI tool for content syncing | 1.0.0  |
 | [@fanyangmeng/ghost-meilisearch-webhook-handler](apps/webhook-handler) | Webhook handler for real-time updates |  1.0.0  |
 | [@fanyangmeng/ghost-meilisearch-config](packages/config) | Configuration utilities |  1.0.0 |
