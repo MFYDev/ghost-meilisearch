@@ -14,6 +14,7 @@ Add powerful, lightning-fast search to your Ghost blog with Meilisearch. This in
 - 🔐 **Secure**: Uses search-only API keys for frontend, admin keys for backend
 - 🍭 **Highlight Search Result**: Highlight the search result with the exact phrase
 - 📈 **Improved Plain Text Search Result**: Improved plain text search result powered by cheerio
+- 🧠 **AI-Powered Semantic Search**: Optional semantic search using Meilisearch v1.3+ hybrid search (requires configured embedder).
 
 ## Project Structure
 
@@ -39,6 +40,8 @@ You'll need:
 - Content API key from Ghost (for syncing content), you can get it by following the guide [here](https://ghost.org/docs/content-api/)
 - Search-only API key from Meilisearch (for the search UI)
 - Writing API key for the index `ghost_posts` from Meilisearch (for the webhook handler)
+- **For AI Search (Optional):**
+  - An [embedder configured](https://www.meilisearch.com/docs/learn/ai_powered_search/getting_started_with_ai_search) in your Meilisearch instance settings
 
 ### 2. Add Search to Your Theme
 
