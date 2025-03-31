@@ -49,13 +49,13 @@ There are two ways to add search to your Ghost site:
 Add to your `config.[environment].json`:
 ```json
 "sodoSearch": {
-    "url": "https://cdn.jsdelivr.net/npm/@fanyangmeng/ghost-meilisearch-search-ui@0.5.1/dist/search.min.js"
+    "url": "https://cdn.jsdelivr.net/npm/@fanyangmeng/ghost-meilisearch-search-ui@1.0.0/dist/search.min.js"
 }
 ```
 
 Or set the environment variable:
 ```bash
-sodoSearch__url=https://cdn.jsdelivr.net/npm/@fanyangmeng/ghost-meilisearch-search-ui@0.5.1/dist/search.min.js
+sodoSearch__url=https://cdn.jsdelivr.net/npm/@fanyangmeng/ghost-meilisearch-search-ui@1.0.0/dist/search.min.js
 ```
 
 #### Option 2: Code Injection
@@ -63,7 +63,7 @@ sodoSearch__url=https://cdn.jsdelivr.net/npm/@fanyangmeng/ghost-meilisearch-sear
 If you're using a managed host like Ghost(Pro), add this to your site's code injection (Settings → Code injection → Site Header):
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@fanyangmeng/ghost-meilisearch-search-ui@0.5.1/dist/search.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@fanyangmeng/ghost-meilisearch-search-ui@1.0.0/dist/search.min.js"></script>
 ```
 
 ### 3. Configure the Search UI
@@ -90,17 +90,29 @@ Remember, never use the default master API key in the below, it will expose your
 Add this to your site's header code injection:
 
 ```html
-<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@fanyangmeng/ghost-meilisearch-search-ui@0.5.1/dist/styles.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@fanyangmeng/ghost-meilisearch-search-ui@1.0.0/dist/styles.css">
 
 <script>
   window.__MS_SEARCH_CONFIG__ = {
     meilisearchHost: "https://your-meilisearch-host.com",
     meilisearchApiKey: "your-search-only-api-key",
     indexName: "ghost_posts",
-    theme: "system"  // Optional: 'light', 'dark', or 'system'
+    theme: "system",  // Optional: 'light', 'dark', or 'system'
+
+    // --- Optional AI Search Configuration ---
+    // Requires Meilisearch with a configured embedder
+    enableAiSearch: true, // Set to true to enable AI-powered search (default: false)
+    aiSearchEmbedder: "your-embedder-name", // The name of the embedder configured in Meilisearch (e.g., "openai")
+    aiSearchLimit: 3, // Max number of results to show in the "AI Suggestions" section (default: 3)
   };
 </script>
 ```
+
+**Note on AI Search:**
+- Enabling AI search requires Meilisearch v1.3 or later.
+- You must have an [embedder configured](https://www.meilisearch.com/docs/learn/ai_powered_search/getting_started_with_ai_search) in your Meilisearch instance settings. The `aiSearchEmbedder` name must match the one configured in Meilisearch.
+- When enabled, search results will be split into two sections: "AI Suggestions" (semantic results, limited by `aiSearchLimit`) and "Keyword Matches" (standard keyword results).
+- If `enableAiSearch` is `false` (the default), the `aiSearchEmbedder` and `aiSearchLimit` options are ignored.
 
 ### 4. Initial Content Sync
 
@@ -187,11 +199,11 @@ Now your search index will automatically update when you publish, update, or del
 
 | Package | Description | Latest Version |
 |---------|-------------|----------------|
-| [@fanyangmeng/ghost-meilisearch-search-ui](packages/search-ui) | Search interface that matches your Ghost theme |  0.5.1  |
-| [@fanyangmeng/ghost-meilisearch-cli](apps/cli/README.md) | CLI tool for content syncing | 0.5.0  |
-| [@fanyangmeng/ghost-meilisearch-webhook-handler](apps/webhook-handler) | Webhook handler for real-time updates |  0.5.1  |
-| [@fanyangmeng/ghost-meilisearch-config](packages/config) | Configuration utilities |  0.5.0 |
-| [@fanyangmeng/ghost-meilisearch-core](packages/core) | Core functionality |  0.5.0 |
+| [@fanyangmeng/ghost-meilisearch-search-ui](packages/search-ui) | Search interface that matches your Ghost theme |  1.0.0  |
+| [@fanyangmeng/ghost-meilisearch-cli](apps/cli/README.md) | CLI tool for content syncing | 1.0.0  |
+| [@fanyangmeng/ghost-meilisearch-webhook-handler](apps/webhook-handler) | Webhook handler for real-time updates |  1.0.0  |
+| [@fanyangmeng/ghost-meilisearch-config](packages/config) | Configuration utilities |  1.0.0 |
+| [@fanyangmeng/ghost-meilisearch-core](packages/core) | Core functionality |  1.0.0 |
 
 ## 📄 License
 
