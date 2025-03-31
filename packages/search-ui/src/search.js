@@ -816,167 +816,119 @@ class GhostMeilisearchSearch {
         excerpt.classList.add("ms-result-excerpt");
         // Prioritize plaintext, fallback to excerpt
         let textContent = hit.plaintext || hit.excerpt || "";
-        let excerptContent = textContent;
+        let excerptContent = ""; // Initialize empty, will be calculated
 
-        // --- Highlighting ---
+        // --- Title Highlighting ---
+        // Use MeiliSearch's formatted title if available and highlighting enabled
+        const formattedTitle =
+            this.config.enableHighlighting &&
+            (hit._formatted?.title || hit._highlightResult?.title?.value);
+        if (formattedTitle) {
+            titleContent = formattedTitle;
+        }
+        // Note: Manual title highlighting could be added here as a fallback if needed
+
+        // --- Excerpt Snippet Calculation and Highlighting ---
         if (query && this.config.enableHighlighting) {
-            // Use MeiliSearch's formatted results if available
-            // Note: MeiliSearch v1.3+ uses _formatted, older versions might use _highlightResult
-            const formattedTitle =
-                hit._formatted?.title || hit._highlightResult?.title?.value;
-            const formattedContent =
-                hit._formatted?.plaintext ||
-                hit._formatted?.excerpt ||
-                hit._highlightResult?.plaintext?.value ||
-                hit._highlightResult?.excerpt?.value;
+            const exactPhrase = this.extractTextBetweenQuotes(query);
+            const hasQuotes = query.startsWith('"') && query.endsWith('"');
+            const phraseToHighlight =
+                exactPhrase || (hasQuotes ? query.slice(1, -1) : null); // Highlight phrase only if exact match requested
+            const wordsToHighlight = phraseToHighlight
+                ? [] // Don't highlight individual words if highlighting a phrase
+                : query
+                      .split(/\s+/)
+                      .filter((w) => w.length >= 2)
+                      .sort((a, b) => b.length - a.length);
 
-            if (formattedTitle) {
-                // Use MeiliSearch's title highlighting
-                titleContent = formattedTitle;
-            }
-            // Note: We don't need manual title highlighting if MeiliSearch provides it.
-            // Add manual title highlighting logic here ONLY if formattedTitle is often missing.
+            let firstMatchPos = -1;
+            let matchLength = 0;
+            const lowerTextContent = textContent.toLowerCase();
 
-            if (formattedContent) {
-                // Use MeiliSearch's content highlighting
-                excerptContent = formattedContent;
+            // 1. Find the position of the first match (phrase or word)
+            if (phraseToHighlight) {
+                const lowerPhrase = phraseToHighlight.toLowerCase();
+                const pos = lowerTextContent.indexOf(lowerPhrase);
+                if (pos !== -1) {
+                    firstMatchPos = pos;
+                    matchLength = phraseToHighlight.length;
+                }
             } else {
-                // Apply manual highlighting if MeiliSearch didn't provide it
-                const exactPhrase = this.extractTextBetweenQuotes(query);
-                const hasQuotes = query.startsWith('"') && query.endsWith('"');
-                const phraseToHighlight =
-                    exactPhrase || (hasQuotes ? query.slice(1, -1) : query);
-
-                // Try highlighting the exact phrase first
-                let phraseHighlighted = false;
-                if (phraseToHighlight && phraseToHighlight.length > 2) {
-                    try {
-                        const lowerText = textContent.toLowerCase();
-                        const lowerPhrase = phraseToHighlight.toLowerCase();
-                        const phrasePosition = lowerText.indexOf(lowerPhrase);
-
-                        if (phrasePosition !== -1) {
-                            const startPos = Math.max(0, phrasePosition - 60);
-                            const endPos = Math.min(
-                                textContent.length,
-                                phrasePosition + phraseToHighlight.length + 60
-                            );
-                            let tempExcerpt = textContent.substring(
-                                startPos,
-                                endPos
-                            );
-
-                            if (startPos > 0) tempExcerpt = "..." + tempExcerpt;
-                            if (endPos < textContent.length)
-                                tempExcerpt = tempExcerpt + "...";
-
-                            const escapedPhrase = phraseToHighlight.replace(
-                                /[.*+?^${}()|[\]\\]/g,
-                                "\\$&"
-                            );
-                            const phraseRegex = new RegExp(
-                                `(${escapedPhrase})`,
-                                "gi"
-                            );
-                            excerptContent = tempExcerpt.replace(
-                                phraseRegex,
-                                "<em>$1</em>"
-                            );
-                            phraseHighlighted = true;
-                        }
-                    } catch (e) {
-                        console.warn(
-                            "Error highlighting exact phrase in excerpt:",
-                            e
-                        );
+                for (const word of wordsToHighlight) {
+                    const lowerWord = word.toLowerCase();
+                    const pos = lowerTextContent.indexOf(lowerWord);
+                    if (
+                        pos !== -1 &&
+                        (firstMatchPos === -1 || pos < firstMatchPos)
+                    ) {
+                        firstMatchPos = pos;
+                        matchLength = word.length; // Use length of the *first* matched word for centering
                     }
                 }
+            }
 
-                // If exact phrase wasn't highlighted, highlight individual words
-                if (!phraseHighlighted && query) {
-                    const words = query
-                        .split(/\s+/)
-                        .filter((w) => w.length >= 2); // Filter short words
-                    words.sort((a, b) => b.length - a.length); // Longer words first
+            // 2. Calculate the snippet boundaries
+            let tempExcerpt = "";
+            if (firstMatchPos !== -1) {
+                const snippetRadius = 60;
+                const startPos = Math.max(0, firstMatchPos - snippetRadius);
+                const endPos = Math.min(
+                    textContent.length,
+                    firstMatchPos + matchLength + snippetRadius
+                );
+                tempExcerpt = textContent.substring(startPos, endPos);
 
-                    let firstMatchPos = -1;
-                    let matchedWordLength = 0;
+                // Add ellipsis
+                if (startPos > 0) tempExcerpt = "..." + tempExcerpt;
+                if (endPos < textContent.length)
+                    tempExcerpt = tempExcerpt + "...";
+            } else {
+                // No match found, use beginning of text
+                tempExcerpt =
+                    textContent.substring(0, 150) +
+                    (textContent.length > 150 ? "..." : "");
+            }
 
-                    // Find the first word match to center the snippet
-                    for (const word of words) {
-                        const wordPos = textContent
-                            .toLowerCase()
-                            .indexOf(word.toLowerCase());
-                        if (
-                            wordPos !== -1 &&
-                            (firstMatchPos === -1 || wordPos < firstMatchPos)
-                        ) {
-                            firstMatchPos = wordPos;
-                            matchedWordLength = word.length;
-                        }
-                    }
+            // 3. Apply highlighting to the snippet
+            excerptContent = tempExcerpt; // Start with the calculated snippet
+            const termsToHighlight = phraseToHighlight
+                ? [phraseToHighlight]
+                : wordsToHighlight;
 
-                    if (firstMatchPos !== -1) {
-                        const startPos = Math.max(0, firstMatchPos - 60);
-                        const endPos = Math.min(
-                            textContent.length,
-                            firstMatchPos + matchedWordLength + 60
-                        );
-                        let tempExcerpt = textContent.substring(
-                            startPos,
-                            endPos
-                        );
-
-                        if (startPos > 0) tempExcerpt = "..." + tempExcerpt;
-                        if (endPos < textContent.length)
-                            tempExcerpt = tempExcerpt + "...";
-
-                        // Highlight all matching words within the snippet
-                        excerptContent = words.reduce(
-                            (currentExcerpt, word) => {
-                                try {
-                                    const escapedWord = word.replace(
-                                        /[.*+?^${}()|[\]\\]/g,
-                                        "\\$&"
-                                    );
-                                    // Highlight only if not already inside <em> tags
-                                    const regex = new RegExp(
-                                        `(?<!<em>)(${escapedWord})(?!<\\/em>)`,
-                                        "gi"
-                                    );
-                                    return currentExcerpt.replace(
-                                        regex,
-                                        "<em>$1</em>"
-                                    );
-                                } catch (e) {
-                                    console.warn(
-                                        "Error highlighting word in excerpt:",
-                                        word,
-                                        e
-                                    );
-                                    return currentExcerpt;
-                                }
-                            },
-                            tempExcerpt
-                        );
-                    } else {
-                        // No words matched, use truncated content
-                        excerptContent =
-                            textContent.substring(0, 150) +
-                            (textContent.length > 150 ? "..." : "");
-                    }
+            for (const term of termsToHighlight) {
+                try {
+                    const escapedTerm = term.replace(
+                        /[.*+?^${}()|[\]\\]/g,
+                        "\\$&"
+                    );
+                    // Highlight all occurrences within the snippet, case-insensitive
+                    // Ensure we don't highlight inside existing tags
+                    const regex = new RegExp(
+                        `(?<!<em>)(${escapedTerm})(?!<\\/em>)`,
+                        "gi"
+                    );
+                    excerptContent = excerptContent.replace(
+                        regex,
+                        "<em>$1</em>"
+                    );
+                } catch (e) {
+                    console.warn(
+                        "Error highlighting term in excerpt:",
+                        term,
+                        e
+                    );
                 }
             }
         } else {
-            // Highlighting disabled, use truncated content
+            // Highlighting disabled or no query, use truncated content
             excerptContent =
                 textContent.substring(0, 150) +
                 (textContent.length > 150 ? "..." : "");
         }
 
         // Set content
-        title.innerHTML = titleContent; // Use innerHTML for highlighted content
-        excerpt.innerHTML = excerptContent; // Use innerHTML for highlighted content
+        title.innerHTML = titleContent; // Use innerHTML for potential highlighting
+        excerpt.innerHTML = excerptContent; // Use innerHTML for potential highlighting
 
         // Append elements
         resultItem.appendChild(title);
