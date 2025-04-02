@@ -1,26 +1,26 @@
 {
-  "name": "@fanyangmeng/ghost-meilisearch-search-ui",
-  "version": "1.0.1",
-  "description": "Search UI for Ghost-Meilisearch integration",
-  "main": "dist/search.js",
-  "type": "module",
-  "scripts": {
-    "build": "rollup -c",
-    "clean": "rimraf dist",
-    "dev": "rollup -c -w",
-    "lint": "eslint src --ext .js"
-  },
-  "dependencies": {
-    "meilisearch": "^0.49.0"
-  },
-  "devDependencies": {
-    "@rollup/plugin-commonjs": "^28.0.3",
-    "@rollup/plugin-node-resolve": "^16.0.0",
-    "@rollup/plugin-terser": "^0.4.4",
-    "eslint": "^9.21.0",
-    "postcss": "^8.5.3",
-    "rimraf": "^6.0.1",
-    "rollup": "^4.34.9",
-    "rollup-plugin-postcss": "^4.0.2"
-  }
+    "name": "@fanyangmeng/ghost-meilisearch-search-ui",
+    "version": "1.0.3",
+    "description": "Search UI for Ghost-Meilisearch integration",
+    "main": "dist/search.js",
+    "type": "module",
+    "scripts": {
+        "build": "rollup -c",
+        "clean": "rimraf dist",
+        "dev": "rollup -c -w",
+        "lint": "eslint src --ext .js"
+    },
+    "dependencies": {
+        "meilisearch": "^0.49.0"
+    },
+    "devDependencies": {
+        "@rollup/plugin-commonjs": "^28.0.3",
+        "@rollup/plugin-node-resolve": "^16.0.0",
+        "@rollup/plugin-terser": "^0.4.4",
+        "eslint": "^9.21.0",
+        "postcss": "^8.5.3",
+        "rimraf": "^6.0.1",
+        "rollup": "^4.34.9",
+        "rollup-plugin-postcss": "^4.0.2"
+    }
 }
