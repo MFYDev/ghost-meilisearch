@@ -71,10 +71,10 @@
     "@types/cheerio": "^0.22.35",
     "axios": "^1.8.4",
     "concurrently": "^9.1.2",
-    "eslint": "^9.21.0",
+    "eslint": "^9.24.0",
     "glob": "^11.0.1",
     "rimraf": "^6.0.1",
     "turbo": "^2.5.0",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.3"
   }
 }
