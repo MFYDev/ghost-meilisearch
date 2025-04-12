@@ -774,21 +774,53 @@ class GhostMeilisearchSearch {
      */
     _createHitElement(hit, query) {
         const li = document.createElement("li");
+        const visibility = hit.visibility || "public"; // Default to public if missing
 
-        // Create result link
+        // --- Helper for basic highlighting ---
+        const highlightText = (text, terms) => {
+            if (
+                !this.config.enableHighlighting ||
+                !terms ||
+                terms.length === 0 ||
+                !text
+            ) {
+                return text;
+            }
+            let highlightedText = text;
+            terms.forEach((term) => {
+                try {
+                    const escapedTerm = term.replace(
+                        /[.*+?^${}()|[\]\\]/g,
+                        "\\$&"
+                    );
+                    const regex = new RegExp(`(${escapedTerm})`, "gi");
+                    highlightedText = highlightedText.replace(
+                        regex,
+                        "<em>$1</em>"
+                    );
+                } catch (e) {
+                    console.warn("Error highlighting term:", term, e);
+                }
+            });
+            return highlightedText;
+        };
+
+        // --- Get query terms for basic highlighting ---
+        const queryTerms = query
+            ? query.split(/\s+/).filter((w) => w.length >= 2)
+            : [];
+
+        // --- Create result link (common logic) ---
         const link = document.createElement("a");
         if (hit.url) {
             link.href = hit.url;
         } else if (hit.slug) {
-            // Fallback to slug if URL is not available
             link.href = `/${hit.slug}`;
         } else {
-            link.href = "#"; // Fallback if no URL or slug
-            link.style.pointerEvents = "none"; // Prevent clicking if no destination
+            link.href = "#";
+            link.style.pointerEvents = "none";
         }
         link.classList.add("ms-result-link");
-
-        // Add click event listener to close search before navigation
         link.addEventListener("click", (e) => {
             if (link.style.pointerEvents === "none") {
                 e.preventDefault();
@@ -796,13 +828,12 @@ class GhostMeilisearchSearch {
             }
             e.preventDefault();
             this.close();
-            // Navigate after a brief delay to ensure UI is closed
             setTimeout(() => {
                 window.location.href = link.href;
             }, 10);
         });
 
-        // Create result item container
+        // --- Create result item container (common logic) ---
         const resultItem = document.createElement("div");
         resultItem.classList.add("ms-result-item");
 
@@ -814,123 +845,112 @@ class GhostMeilisearchSearch {
         // --- Excerpt / Content ---
         const excerpt = document.createElement("p");
         excerpt.classList.add("ms-result-excerpt");
-        // Prioritize plaintext, fallback to excerpt
-        let textContent = hit.plaintext || hit.excerpt || "";
-        let excerptContent = ""; // Initialize empty, will be calculated
+        let excerptContent = "";
 
-        // --- Title Highlighting ---
-        // Use MeiliSearch's formatted title if available and highlighting enabled
-        const formattedTitle =
-            this.config.enableHighlighting &&
-            (hit._formatted?.title || hit._highlightResult?.title?.value);
-        if (formattedTitle) {
-            titleContent = formattedTitle;
-        }
-        // Note: Manual title highlighting could be added here as a fallback if needed
+        // --- Conditional Rendering based on Visibility ---
+        if (visibility === "public") {
+            // --- Public Post Rendering (Existing Logic) ---
 
-        // --- Excerpt Snippet Calculation and Highlighting ---
-        if (query && this.config.enableHighlighting) {
-            const exactPhrase = this.extractTextBetweenQuotes(query);
-            const hasQuotes = query.startsWith('"') && query.endsWith('"');
-            const phraseToHighlight =
-                exactPhrase || (hasQuotes ? query.slice(1, -1) : null); // Highlight phrase only if exact match requested
-            const wordsToHighlight = phraseToHighlight
-                ? [] // Don't highlight individual words if highlighting a phrase
-                : query
-                      .split(/\s+/)
-                      .filter((w) => w.length >= 2)
-                      .sort((a, b) => b.length - a.length);
-
-            let firstMatchPos = -1;
-            let matchLength = 0;
-            const lowerTextContent = textContent.toLowerCase();
-
-            // 1. Find the position of the first match (phrase or word)
-            if (phraseToHighlight) {
-                const lowerPhrase = phraseToHighlight.toLowerCase();
-                const pos = lowerTextContent.indexOf(lowerPhrase);
-                if (pos !== -1) {
-                    firstMatchPos = pos;
-                    matchLength = phraseToHighlight.length;
-                }
+            // Title Highlighting (prefer _formatted)
+            const formattedTitle =
+                this.config.enableHighlighting &&
+                (hit._formatted?.title || hit._highlightResult?.title?.value);
+            if (formattedTitle) {
+                titleContent = formattedTitle;
             } else {
-                for (const word of wordsToHighlight) {
-                    const lowerWord = word.toLowerCase();
-                    const pos = lowerTextContent.indexOf(lowerWord);
-                    if (
-                        pos !== -1 &&
-                        (firstMatchPos === -1 || pos < firstMatchPos)
-                    ) {
-                        firstMatchPos = pos;
-                        matchLength = word.length; // Use length of the *first* matched word for centering
-                    }
-                }
+                // Fallback to basic highlight if _formatted not available
+                titleContent = highlightText(titleContent, queryTerms);
             }
 
-            // 2. Calculate the snippet boundaries
-            let tempExcerpt = "";
-            if (firstMatchPos !== -1) {
-                const snippetRadius = 60;
-                const startPos = Math.max(0, firstMatchPos - snippetRadius);
-                const endPos = Math.min(
-                    textContent.length,
-                    firstMatchPos + matchLength + snippetRadius
-                );
-                tempExcerpt = textContent.substring(startPos, endPos);
+            // Excerpt Snippet Calculation and Highlighting
+            let textContent = hit.plaintext || hit.excerpt || "";
+            if (query && this.config.enableHighlighting) {
+                const exactPhrase = this.extractTextBetweenQuotes(query);
+                const hasQuotes = query.startsWith('"') && query.endsWith('"');
+                const phraseToHighlight =
+                    exactPhrase || (hasQuotes ? query.slice(1, -1) : null);
+                const wordsToHighlight = phraseToHighlight
+                    ? []
+                    : queryTerms.sort((a, b) => b.length - a.length);
 
-                // Add ellipsis
-                if (startPos > 0) tempExcerpt = "..." + tempExcerpt;
-                if (endPos < textContent.length)
-                    tempExcerpt = tempExcerpt + "...";
+                let firstMatchPos = -1;
+                let matchLength = 0;
+                const lowerTextContent = textContent.toLowerCase();
+
+                if (phraseToHighlight) {
+                    const lowerPhrase = phraseToHighlight.toLowerCase();
+                    const pos = lowerTextContent.indexOf(lowerPhrase);
+                    if (pos !== -1) {
+                        firstMatchPos = pos;
+                        matchLength = phraseToHighlight.length;
+                    }
+                } else {
+                    for (const word of wordsToHighlight) {
+                        const lowerWord = word.toLowerCase();
+                        const pos = lowerTextContent.indexOf(lowerWord);
+                        if (
+                            pos !== -1 &&
+                            (firstMatchPos === -1 || pos < firstMatchPos)
+                        ) {
+                            firstMatchPos = pos;
+                            matchLength = word.length;
+                        }
+                    }
+                }
+
+                let tempExcerpt = "";
+                if (firstMatchPos !== -1) {
+                    const snippetRadius = 60;
+                    const startPos = Math.max(0, firstMatchPos - snippetRadius);
+                    const endPos = Math.min(
+                        textContent.length,
+                        firstMatchPos + matchLength + snippetRadius
+                    );
+                    tempExcerpt = textContent.substring(startPos, endPos);
+                    if (startPos > 0) tempExcerpt = "..." + tempExcerpt;
+                    if (endPos < textContent.length)
+                        tempExcerpt = tempExcerpt + "...";
+                } else {
+                    tempExcerpt =
+                        textContent.substring(0, 150) +
+                        (textContent.length > 150 ? "..." : "");
+                }
+
+                excerptContent = tempExcerpt;
+                const termsToHighlight = phraseToHighlight
+                    ? [phraseToHighlight]
+                    : wordsToHighlight;
+                excerptContent = highlightText(
+                    excerptContent,
+                    termsToHighlight
+                ); // Use helper
             } else {
-                // No match found, use beginning of text
-                tempExcerpt =
+                // Highlighting disabled or no query, use truncated content
+                excerptContent =
                     textContent.substring(0, 150) +
                     (textContent.length > 150 ? "..." : "");
             }
-
-            // 3. Apply highlighting to the snippet
-            excerptContent = tempExcerpt; // Start with the calculated snippet
-            const termsToHighlight = phraseToHighlight
-                ? [phraseToHighlight]
-                : wordsToHighlight;
-
-            for (const term of termsToHighlight) {
-                try {
-                    const escapedTerm = term.replace(
-                        /[.*+?^${}()|[\]\\]/g,
-                        "\\$&"
-                    );
-                    // Highlight all occurrences within the snippet, case-insensitive
-                    // Ensure we don't highlight inside existing tags
-                    const regex = new RegExp(
-                        `(?<!<em>)(${escapedTerm})(?!<\\/em>)`,
-                        "gi"
-                    );
-                    excerptContent = excerptContent.replace(
-                        regex,
-                        "<em>$1</em>"
-                    );
-                } catch (e) {
-                    console.warn(
-                        "Error highlighting term in excerpt:",
-                        term,
-                        e
-                    );
-                }
-            }
         } else {
-            // Highlighting disabled or no query, use truncated content
+            // --- Non-Public Post Rendering (Simpler Logic) ---
+            titleContent = hit.title || "Untitled";
+            // Use raw excerpt, fallback to truncated plaintext
             excerptContent =
-                textContent.substring(0, 150) +
-                (textContent.length > 150 ? "..." : "");
+                hit.excerpt ||
+                (hit.plaintext
+                    ? hit.plaintext.substring(0, 150) +
+                      (hit.plaintext.length > 150 ? "..." : "")
+                    : "");
+
+            // Apply basic highlighting
+            titleContent = highlightText(titleContent, queryTerms);
+            excerptContent = highlightText(excerptContent, queryTerms);
         }
 
-        // Set content
-        title.innerHTML = titleContent; // Use innerHTML for potential highlighting
-        excerpt.innerHTML = excerptContent; // Use innerHTML for potential highlighting
+        // --- Set content (common logic) ---
+        title.innerHTML = titleContent;
+        excerpt.innerHTML = excerptContent;
 
-        // Append elements
+        // --- Append elements (common logic) ---
         resultItem.appendChild(title);
         resultItem.appendChild(excerpt);
         link.appendChild(resultItem);
