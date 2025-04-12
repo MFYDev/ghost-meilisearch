@@ -329,7 +329,8 @@ class CloudflareGhostMeilisearchManager {
       published_at: publishedAt,
       updated_at: updatedAt,
       tags,
-      authors
+      authors,
+      visibility: post.visibility || 'public' // Add visibility, default to public if missing
     };
   }
 
@@ -518,7 +519,7 @@ export default {
           const { id, status, visibility, title } = payload.post.current;
           console.log(`📄 Processing post: "${title || 'Untitled'}" (${id || postId})`);
           
-          if (status === 'published' && visibility === 'public') {
+          if (status === 'published') { // Index all published posts, regardless of visibility
             console.log('📝 Indexing published post');
             await withTimeout(
               manager.indexPost(postId),
@@ -543,7 +544,7 @@ export default {
             console.log('✨ Post removed successfully');
             return new Response(JSON.stringify({ 
               success: true, 
-              message: `Post ${postId} removed from index (not published or not public)` 
+              message: `Post ${postId} removed from index (not published)`
             }), {
               status: 200,
               headers: { 'Content-Type': 'application/json' }
