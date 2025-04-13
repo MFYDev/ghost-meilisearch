@@ -1,6 +1,6 @@
 {
     "name": "@fanyangmeng/ghost-meilisearch",
-    "version": "1.1.1",
+    "version": "1.1.3",
     "description": "Meilisearch integration for Ghost CMS",
     "main": "dist/index.js",
     "type": "module",
