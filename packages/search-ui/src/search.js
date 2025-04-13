@@ -580,6 +580,7 @@ class GhostMeilisearchSearch {
                     "plaintext",
                     "tags",
                     "slug", // Ensure slug is retrieved
+                    "visibility", // <-- Add visibility here
                     // Add any other fields needed for display or logic
                 ],
                 highlightPreTag: "<em>", // Ensure consistent highlighting tags
@@ -773,8 +774,10 @@ class GhostMeilisearchSearch {
      * @private
      */
     _createHitElement(hit, query) {
+        console.log("--- Processing Hit ---", JSON.stringify(hit)); // DEBUG: Log the raw hit
         const li = document.createElement("li");
         const visibility = hit.visibility || "public"; // Default to public if missing
+        console.log("Determined visibility:", visibility); // DEBUG: Log determined visibility
 
         // --- Helper for basic highlighting ---
         const highlightText = (text, terms) => {
@@ -934,20 +937,20 @@ class GhostMeilisearchSearch {
             // --- Non-Public Post Rendering (Simpler Logic) ---
             titleContent = hit.title || "Untitled";
             // Use raw excerpt, fallback to truncated plaintext
-            excerptContent =
-                hit.excerpt ||
-                (hit.plaintext
-                    ? hit.plaintext.substring(0, 150) +
-                      (hit.plaintext.length > 150 ? "..." : "")
-                    : "");
+            // Use raw excerpt only, default to empty string if missing
+            excerptContent = hit.excerpt || "";
 
             // Apply basic highlighting
             titleContent = highlightText(titleContent, queryTerms);
-            excerptContent = highlightText(excerptContent, queryTerms);
+            // excerptContent = highlightText(excerptContent, queryTerms); // Skip highlighting excerpt for non-public
         }
-
+        console.log(
+            "Final excerptContent before setting HTML:",
+            excerptContent
+        ); // DEBUG: Log final excerpt content
         // --- Set content (common logic) ---
         title.innerHTML = titleContent;
+        excerpt.innerHTML = excerptContent;
         excerpt.innerHTML = excerptContent;
 
         // --- Append elements (common logic) ---
