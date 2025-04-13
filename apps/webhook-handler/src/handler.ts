@@ -1,6 +1,6 @@
 import { Handler } from '@netlify/functions';
 import * as cheerio from 'cheerio';
-import { SignJWT } from 'jose'; // Import jose for JWT signing
+import * as jwt from 'jsonwebtoken'; // Import jsonwebtoken
 import * as crypto from 'crypto'; // Import crypto for signature verification
 
 // Webhook payload interface with essential fields
@@ -133,24 +133,20 @@ class NetlifyGhostMeilisearchManager {
   }
 
   /**
-   * Generate Ghost Admin API JWT using jose
+   * Generate Ghost Admin API JWT
    */
-  private async generateJwt(): Promise<string> { // Now async
+  private generateJwt(): string {
     const [id, secret] = this.ghostAdminApiKey.split(':');
     if (!id || !secret) {
       throw new Error('Invalid GHOST_ADMIN_API_KEY format. Expected id:secret');
     }
     try {
-      // jose uses Uint8Array for the secret key
-      const secretBuffer = Uint8Array.from(Buffer.from(secret, 'hex'));
-      
-      const token = await new SignJWT({})
-        .setProtectedHeader({ alg: 'HS256', kid: id })
-        .setIssuedAt()
-        .setExpirationTime('5m')
-        .setAudience('/admin/')
-        .sign(secretBuffer);
-        
+      const token = jwt.sign({}, Buffer.from(secret, 'hex'), {
+        keyid: id,
+        algorithm: 'HS256',
+        expiresIn: '5m',
+        audience: `/admin/`
+      });
       return token;
     } catch (err) {
       console.error("JWT Generation Error:", err);
@@ -168,8 +164,8 @@ class NetlifyGhostMeilisearchManager {
     url.searchParams.append('include', 'tags,authors');
     url.searchParams.append('formats', 'html,plaintext');
 
-    // Generate JWT for authorization (now async)
-    const token = await this.generateJwt();
+    // Generate JWT for authorization
+    const token = this.generateJwt();
 
     const response = await fetch(url.toString(), {
       headers: {

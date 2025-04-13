@@ -1,7 +1,7 @@
 // Environment variables interface for the Cloudflare Worker
 // Import cheerio for HTML to plaintext conversion
 import * as cheerio from 'cheerio';
-import { SignJWT } from 'jose'; // Import jose for JWT signing
+import * as jwt from 'jsonwebtoken'; // Import jsonwebtoken
 
 interface Env {
   /**
@@ -194,35 +194,22 @@ class CloudflareGhostMeilisearchManager {
   }
 
   /**
-   * Generate Ghost Admin API JWT using jose
+   * Generate Ghost Admin API JWT
    */
-  private async generateJwt(): Promise<string> { // Now async
+  private generateJwt(): string {
     const [id, secret] = this.ghostAdminApiKey.split(':');
-    if (!id || !secret) {
+     if (!id || !secret) {
       throw new Error('Invalid GHOST_ADMIN_API_KEY format. Expected id:secret');
     }
     try {
-      // jose uses Uint8Array for the secret key
-      // Need TextEncoder for Cloudflare Workers environment
-      const encoder = new TextEncoder();
-      const secretBuffer = encoder.encode(secret); // Use TextEncoder
-      
-      // Re-import key for signing (Web Crypto API standard)
-      const key = await crypto.subtle.importKey(
-        'raw',
-        secretBuffer,
-        { name: 'HMAC', hash: 'SHA-256' },
-        false,
-        ['sign']
-      );
-
-      const token = await new SignJWT({})
-        .setProtectedHeader({ alg: 'HS256', kid: id })
-        .setIssuedAt()
-        .setExpirationTime('5m')
-        .setAudience('/admin/')
-        .sign(key); // Sign with the imported key
-        
+      // Note: This might fail in Cloudflare Workers if 'jsonwebtoken' uses Node APIs.
+      // Consider using 'jose' library if build/runtime errors occur.
+      const token = jwt.sign({}, Buffer.from(secret, 'hex'), {
+        keyid: id,
+        algorithm: 'HS256',
+        expiresIn: '5m',
+        audience: `/admin/`
+      });
       return token;
     } catch (err) {
       console.error("JWT Generation Error:", err);
@@ -240,8 +227,8 @@ class CloudflareGhostMeilisearchManager {
     url.searchParams.append('include', 'tags,authors');
     url.searchParams.append('formats', 'html,plaintext');
 
-    // Generate JWT for authorization (now async)
-    const token = await this.generateJwt();
+    // Generate JWT for authorization
+    const token = this.generateJwt();
 
     const response = await fetch(url.toString(), {
       headers: {
