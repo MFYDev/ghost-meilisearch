@@ -1,6 +1,7 @@
 // Environment variables interface for the Cloudflare Worker
 // Import cheerio for HTML to plaintext conversion
 import * as cheerio from 'cheerio';
+import { SignJWT } from 'jose'; // Import jose for JWT signing
 
 interface Env {
   /**
@@ -173,7 +174,7 @@ function isPublishedAndPublic(postData: { status?: string; visibility?: string }
 // CloudflareGhostMeilisearchManager - A simplified version of GhostMeilisearchManager that uses fetch API
 class CloudflareGhostMeilisearchManager {
   private ghostUrl: string;
-  private ghostKey: string;
+  private ghostAdminApiKey: string; // Store the full Admin API Key
   private ghostVersion: string;
   private meilisearchHost: string;
   private meilisearchApiKey: string;
@@ -185,7 +186,7 @@ class CloudflareGhostMeilisearchManager {
     index: { name: string; primaryKey: string; fields: any[] };
   }) {
     this.ghostUrl = config.ghost.url;
-    this.ghostKey = config.ghost.key; // This will now be the Admin API Key
+    this.ghostAdminApiKey = config.ghost.key; // Store the Admin API Key
     this.ghostVersion = config.ghost.version;
     this.meilisearchHost = config.meilisearch.host;
     this.meilisearchApiKey = config.meilisearch.apiKey;
@@ -193,32 +194,69 @@ class CloudflareGhostMeilisearchManager {
   }
 
   /**
-   * Fetch a post from Ghost API
+   * Generate Ghost Admin API JWT using jose
+   */
+  private async generateJwt(): Promise<string> { // Now async
+    const [id, secret] = this.ghostAdminApiKey.split(':');
+    if (!id || !secret) {
+      throw new Error('Invalid GHOST_ADMIN_API_KEY format. Expected id:secret');
+    }
+    try {
+      // jose uses Uint8Array for the secret key
+      // Need TextEncoder for Cloudflare Workers environment
+      const encoder = new TextEncoder();
+      const secretBuffer = encoder.encode(secret); // Use TextEncoder
+      
+      // Re-import key for signing (Web Crypto API standard)
+      const key = await crypto.subtle.importKey(
+        'raw',
+        secretBuffer,
+        { name: 'HMAC', hash: 'SHA-256' },
+        false,
+        ['sign']
+      );
+
+      const token = await new SignJWT({})
+        .setProtectedHeader({ alg: 'HS256', kid: id })
+        .setIssuedAt()
+        .setExpirationTime('5m')
+        .setAudience('/admin/')
+        .sign(key); // Sign with the imported key
+        
+      return token;
+    } catch (err) {
+      console.error("JWT Generation Error:", err);
+      throw new Error('Failed to generate Admin API JWT');
+    }
+  }
+
+  /**
+   * Fetch a post from Ghost Admin API using JWT
    */
   private async fetchPost(postId: string): Promise<any> {
-    const cacheBuster = Date.now();
-    // Use Admin API endpoint
     const url = new URL(`${this.ghostUrl}/ghost/api/admin/posts/${postId}/`);
     
-    // Add query parameters (Admin API uses different params, 'formats' needed for plaintext/html)
+    // Add query parameters
     url.searchParams.append('include', 'tags,authors');
-    url.searchParams.append('formats', 'html,plaintext'); // Request formats needed for excerpt/plaintext
-    url.searchParams.append('cache', cacheBuster.toString()); // Cache buster might not be needed/respected by Admin API but harmless
+    url.searchParams.append('formats', 'html,plaintext');
+
+    // Generate JWT for authorization (now async)
+    const token = await this.generateJwt();
 
     const response = await fetch(url.toString(), {
       headers: {
         'Accept': 'application/json',
         'Accept-Version': this.ghostVersion,
-        // Use Authorization header for Admin API Key
-        'Authorization': `Ghost ${this.ghostKey}`
+        'Authorization': `Ghost ${token}` // Use JWT here
       }
     });
     
     if (!response.ok) {
+      const errorBody = await response.text();
+      console.error("Ghost API Error:", errorBody);
       throw new Error(`Failed to fetch post: ${response.status} ${response.statusText}`);
     }
     
-    // Admin API returns the post directly in the 'posts' array
     const data = await response.json() as { posts: any[] };
     if (!data.posts || !Array.isArray(data.posts) || data.posts.length === 0) {
       throw new Error(`No post found with ID: ${postId}`);
