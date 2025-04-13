@@ -1,4 +1,5 @@
-import GhostContentAPI, { PostOrPage as GhostPost, BrowseResults } from '@tryghost/content-api';
+// @ts-ignore - Suppress TS7016 error as @tryghost/admin-api lacks types
+import GhostAdminAPI, { PostOrPage as GhostPost, PostsOrPages as GhostPostsOrPages } from '@tryghost/admin-api';
 import { MeiliSearch, Index } from 'meilisearch';
 import { Config, IndexField } from '@fanyangmeng/ghost-meilisearch-config';
 import * as cheerio from 'cheerio';
@@ -21,7 +22,7 @@ export interface Post {
 }
 
 export class GhostMeilisearchManager {
-  private ghost: ReturnType<typeof GhostContentAPI>;
+  private ghost: GhostAdminAPI;
   private meilisearch: MeiliSearch;
   private config: Config;
   private index: Index;
@@ -29,8 +30,9 @@ export class GhostMeilisearchManager {
   constructor(config: Config) {
     this.config = config;
     
-    // Initialize Ghost Content API client
-    this.ghost = GhostContentAPI({
+    // Initialize Ghost Admin API client
+    // The 'key' from config is expected to be the Admin API key (id:secret)
+    this.ghost = new GhostAdminAPI({
       url: config.ghost.url,
       key: config.ghost.key,
       version: config.ghost.version
@@ -253,54 +255,47 @@ export class GhostMeilisearchManager {
    */
   private async fetchAllPosts(): Promise<GhostPost[]> {
     let allPosts: GhostPost[] = [];
-    
-    // Fetch first page of posts
-    const posts = await this.ghost.posts.browse({
-      limit: 15, // Default limit in Ghost
-      include: 'tags,authors'
-    });
-    
-    // Add posts to our array
-    if (Array.isArray(posts)) {
-      allPosts = [...posts];
-    } else if (posts && typeof posts === 'object') {
-      // Handle the case where posts is a BrowseResults object
-      const postsArray = posts as unknown as GhostPost[];
-      allPosts = [...postsArray];
-    }
-    
-    // Get total number of posts and calculate pages
-    let total = 0;
-    let limit = 15;
-    
-    // Try to extract pagination info
-    if (posts && typeof posts === 'object' && 'meta' in posts) {
-      const meta = (posts as any).meta;
-      if (meta && meta.pagination) {
-        total = meta.pagination.total;
-        limit = meta.pagination.limit;
+    let currentPage = 1;
+    let totalPages = 1; // Initialize to 1 to ensure the loop runs at least once
+    const limit = 50; // Fetch more posts per page with Admin API
+
+    do {
+      try {
+        // Fetch posts for the current page using Admin API client
+        const pageResponse = await this.ghost.posts.browse({
+          limit: limit,
+          page: currentPage,
+          include: 'tags,authors',
+          formats: 'html,plaintext' // Request necessary formats
+        });
+
+        // Add posts from the current page response
+        // Admin API client returns posts in the main array
+        if (pageResponse && Array.isArray(pageResponse)) {
+           allPosts = allPosts.concat(pageResponse);
+        } else {
+          // Handle potential inconsistencies or errors if needed
+          console.warn(`Unexpected response format on page ${currentPage}:`, pageResponse);
+        }
+
+        // Update total pages from pagination metadata if available
+        // Admin API client includes meta directly in the response object
+        if (pageResponse && pageResponse.meta && pageResponse.meta.pagination) {
+          totalPages = pageResponse.meta.pagination.pages ?? totalPages;
+        } else if (currentPage === 1) {
+           // If meta is missing on the first page, assume only one page
+           totalPages = 1;
+        }
+        
+        currentPage++;
+
+      } catch (error) {
+         // Log error and stop fetching further pages
+         console.error(`Error fetching page ${currentPage}:`, error);
+         break;
       }
-    }
-    const totalPages = Math.ceil(total / limit);
-    
-    // Fetch remaining pages
-    for (let page = 2; page <= totalPages; page++) {
-      const pageResponse = await this.ghost.posts.browse({
-        limit: limit,
-        page: page,
-        include: 'tags,authors'
-      });
-      
-      // Add posts to our array
-      if (Array.isArray(pageResponse)) {
-        allPosts = [...allPosts, ...pageResponse];
-      } else if (pageResponse && typeof pageResponse === 'object') {
-        // Handle the case where pageResponse is a BrowseResults object
-        const postsArray = pageResponse as unknown as GhostPost[];
-        allPosts = [...allPosts, ...postsArray];
-      }
-    }
-    
+    } while (currentPage <= totalPages);
+
     return allPosts;
   }
 
@@ -312,11 +307,12 @@ export class GhostMeilisearchManager {
       // Add a small delay to ensure Ghost API returns the latest content
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Add a cache-busting parameter to force a fresh fetch
-      const cacheBuster = Date.now();
-      const post = await this.ghost.posts.read({id: postId} as any, {
+      // Fetch the post using the Admin API client
+      // The first argument to read is an object identifying the post (e.g., by id or slug)
+      // The second argument contains options like include and formats
+      const post = await this.ghost.posts.read({ id: postId }, {
         include: 'tags,authors',
-        cache: cacheBuster.toString()
+        formats: 'html,plaintext' // Request necessary formats
       });
       
       const document = this.transformPost(post);

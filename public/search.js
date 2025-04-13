@@ -2588,6 +2588,7 @@
                         "plaintext",
                         "tags",
                         "slug", // Ensure slug is retrieved
+                        "visibility", // <-- Add visibility here
                         // Add any other fields needed for display or logic
                     ],
                     highlightPreTag: "<em>", // Ensure consistent highlighting tags
@@ -2781,8 +2782,10 @@
          * @private
          */
         _createHitElement(hit, query) {
+            console.log("--- Processing Hit ---", JSON.stringify(hit)); // DEBUG: Log the raw hit
             const li = document.createElement("li");
             const visibility = hit.visibility || "public"; // Default to public if missing
+            console.log("Determined visibility:", visibility); // DEBUG: Log determined visibility
 
             // --- Helper for basic highlighting ---
             const highlightText = (text, terms) => {
@@ -2949,9 +2952,13 @@
                 titleContent = highlightText(titleContent, queryTerms);
                 // excerptContent = highlightText(excerptContent, queryTerms); // Skip highlighting excerpt for non-public
             }
-
+            console.log(
+                "Final excerptContent before setting HTML:",
+                excerptContent
+            ); // DEBUG: Log final excerpt content
             // --- Set content (common logic) ---
             title.innerHTML = titleContent;
+            excerpt.innerHTML = excerptContent;
             excerpt.innerHTML = excerptContent;
 
             // --- Append elements (common logic) ---

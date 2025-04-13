@@ -14,7 +14,7 @@
     },
     "dependencies": {
         "@fanyangmeng/ghost-meilisearch-config": "^1.1.1",
-        "@tryghost/content-api": "^1.11.21",
+        "@tryghost/admin-api": "^1.13.12",
         "cheerio": "^1.0.0",
         "meilisearch": "^0.49.0"
     },
