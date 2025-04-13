@@ -2942,16 +2942,12 @@
                 // --- Non-Public Post Rendering (Simpler Logic) ---
                 titleContent = hit.title || "Untitled";
                 // Use raw excerpt, fallback to truncated plaintext
-                excerptContent =
-                    hit.excerpt ||
-                    (hit.plaintext
-                        ? hit.plaintext.substring(0, 150) +
-                          (hit.plaintext.length > 150 ? "..." : "")
-                        : "");
+                // Use raw excerpt only, default to empty string if missing
+                excerptContent = hit.excerpt || "";
 
                 // Apply basic highlighting
                 titleContent = highlightText(titleContent, queryTerms);
-                excerptContent = highlightText(excerptContent, queryTerms);
+                // excerptContent = highlightText(excerptContent, queryTerms); // Skip highlighting excerpt for non-public
             }
 
             // --- Set content (common logic) ---
