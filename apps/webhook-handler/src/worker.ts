@@ -14,9 +14,9 @@ interface Env {
   GHOST_URL?: string;
   
   /**
-   * Ghost Content API key
+   * Ghost Admin API key
    */
-  GHOST_KEY?: string;
+  GHOST_ADMIN_API_KEY?: string; // Changed from GHOST_KEY
   
   /**
    * Ghost API version
@@ -185,7 +185,7 @@ class CloudflareGhostMeilisearchManager {
     index: { name: string; primaryKey: string; fields: any[] };
   }) {
     this.ghostUrl = config.ghost.url;
-    this.ghostKey = config.ghost.key;
+    this.ghostKey = config.ghost.key; // This will now be the Admin API Key
     this.ghostVersion = config.ghost.version;
     this.meilisearchHost = config.meilisearch.host;
     this.meilisearchApiKey = config.meilisearch.apiKey;
@@ -197,17 +197,20 @@ class CloudflareGhostMeilisearchManager {
    */
   private async fetchPost(postId: string): Promise<any> {
     const cacheBuster = Date.now();
-    const url = new URL(`${this.ghostUrl}/ghost/api/content/posts/${postId}/`);
+    // Use Admin API endpoint
+    const url = new URL(`${this.ghostUrl}/ghost/api/admin/posts/${postId}/`);
     
-    // Add query parameters
-    url.searchParams.append('key', this.ghostKey);
+    // Add query parameters (Admin API uses different params, 'formats' needed for plaintext/html)
     url.searchParams.append('include', 'tags,authors');
-    url.searchParams.append('cache', cacheBuster.toString());
-    
+    url.searchParams.append('formats', 'html,plaintext'); // Request formats needed for excerpt/plaintext
+    url.searchParams.append('cache', cacheBuster.toString()); // Cache buster might not be needed/respected by Admin API but harmless
+
     const response = await fetch(url.toString(), {
       headers: {
         'Accept': 'application/json',
-        'Accept-Version': this.ghostVersion
+        'Accept-Version': this.ghostVersion,
+        // Use Authorization header for Admin API Key
+        'Authorization': `Ghost ${this.ghostKey}`
       }
     });
     
@@ -215,6 +218,7 @@ class CloudflareGhostMeilisearchManager {
       throw new Error(`Failed to fetch post: ${response.status} ${response.statusText}`);
     }
     
+    // Admin API returns the post directly in the 'posts' array
     const data = await response.json() as { posts: any[] };
     if (!data.posts || !Array.isArray(data.posts) || data.posts.length === 0) {
       throw new Error(`No post found with ID: ${postId}`);
@@ -457,12 +461,12 @@ export default {
       const eventType = determineEventType(payload);
       console.log(`Event type: ${eventType}, Post ID: ${postId}`);
 
-      // Check required environment variables
-      const requiredVars = ['GHOST_URL', 'GHOST_KEY', 'MEILISEARCH_HOST', 'MEILISEARCH_API_KEY'];
+      // Check required environment variables - Require Admin API Key now
+      const requiredVars = ['GHOST_URL', 'GHOST_ADMIN_API_KEY', 'MEILISEARCH_HOST', 'MEILISEARCH_API_KEY'];
       const missingVars = requiredVars.filter(varName => {
         switch(varName) {
           case 'GHOST_URL': return !env.GHOST_URL;
-          case 'GHOST_KEY': return !env.GHOST_KEY;
+          case 'GHOST_ADMIN_API_KEY': return !env.GHOST_ADMIN_API_KEY; // Check for Admin Key
           case 'MEILISEARCH_HOST': return !env.MEILISEARCH_HOST;
           case 'MEILISEARCH_API_KEY': return !env.MEILISEARCH_API_KEY;
           default: return true;
@@ -483,7 +487,7 @@ export default {
       const config = {
         ghost: {
           url: env.GHOST_URL || '',
-          key: env.GHOST_KEY || '',
+          key: env.GHOST_ADMIN_API_KEY || '', // Use Admin API Key
           version: env.GHOST_VERSION || 'v5.0'
         },
         meilisearch: {
