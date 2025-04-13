@@ -11,6 +11,7 @@ export interface Post {
   plaintext: string;
   excerpt: string;
   url: string;
+  visibility: string;
   feature_image?: string;
   published_at: number;
   updated_at: number;
@@ -198,6 +199,7 @@ export class GhostMeilisearchManager {
       plaintext: plaintext,
       excerpt: post.excerpt || '',
       url: post.url || '',
+      visibility: post.visibility || 'public',
       published_at: new Date(post.published_at || Date.now()).getTime(),
       updated_at: new Date(post.updated_at || Date.now()).getTime()
     };

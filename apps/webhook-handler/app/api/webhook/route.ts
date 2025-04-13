@@ -289,7 +289,8 @@ class GhostMeilisearchManager {
       published_at: publishedAt,
       updated_at: updatedAt,
       tags,
-      authors
+      authors,
+      visibility: post.visibility || 'public' // Add visibility, default to public if missing
     };
   }
 
@@ -440,7 +441,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         const { id, status, visibility, title } = payload.post.current;
         console.log(`📄 Processing post: "${title || 'Untitled'}" (${id || postId})`);
         
-        if (status === 'published' && visibility === 'public') {
+        if (status === 'published') { // Index all published posts, regardless of visibility
           console.log('📝 Indexing published post');
           await withTimeout(
             manager.indexPost(postId),
@@ -462,7 +463,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           console.log('✨ Post removed successfully');
           return NextResponse.json({ 
             success: true, 
-            message: `Post ${postId} removed from index (not published or not public)` 
+            message: `Post ${postId} removed from index (not published)`
           });
         }
       } else {
