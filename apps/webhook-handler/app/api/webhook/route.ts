@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as cheerio from 'cheerio';
-import * as jwt from 'jsonwebtoken'; // Import jsonwebtoken
+import * as jose from 'jose'; // Import jose for JWT generation
 
 // Set the runtime to edge for better performance
 export const runtime = 'edge';
@@ -131,10 +131,31 @@ function isPublishedAndPublic(postData: { status?: string; visibility?: string }
   return postData?.status === 'published' && postData?.visibility === 'public';
 }
 
+// Helper function to generate Ghost Admin API JWT using jose (Edge compatible)
+async function generateAdminToken(apiKey: string): Promise<string> {
+  const [id, secret] = apiKey.split(':');
+  if (!id || !secret) {
+    throw new Error('Invalid Ghost Admin API Key format');
+  }
+
+  // Convert hex secret to Uint8Array for Web Crypto API
+  const secretBytes = new Uint8Array(secret.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16)));
+  const alg = 'HS256';
+
+  const jwt = await new jose.SignJWT({})
+    .setProtectedHeader({ alg, kid: id })
+    .setIssuedAt()
+    .setExpirationTime('5m')
+    .setAudience('/admin/')
+    .sign(secretBytes);
+
+  return jwt;
+}
+
 // GhostMeilisearchManager for Next.js API routes
 class GhostMeilisearchManager {
   private ghostUrl: string;
-  private ghostAdminApiKey: string; // Store the full Admin API Key
+  private ghostKey: string;
   private ghostVersion: string;
   private meilisearchHost: string;
   private meilisearchApiKey: string;
@@ -146,7 +167,7 @@ class GhostMeilisearchManager {
     index: { name: string; primaryKey: string; fields: any[] };
   }) {
     this.ghostUrl = config.ghost.url;
-    this.ghostAdminApiKey = config.ghost.key; // Store the Admin API Key
+    this.ghostKey = config.ghost.key; // This will now be the Admin API Key
     this.ghostVersion = config.ghost.version;
     this.meilisearchHost = config.meilisearch.host;
     this.meilisearchApiKey = config.meilisearch.apiKey;
@@ -154,56 +175,35 @@ class GhostMeilisearchManager {
   }
 
   /**
-   * Generate Ghost Admin API JWT
-   */
-  private generateJwt(): string {
-    const [id, secret] = this.ghostAdminApiKey.split(':');
-     if (!id || !secret) {
-      throw new Error('Invalid GHOST_ADMIN_API_KEY format. Expected id:secret');
-    }
-    try {
-      // Note: This might fail in Vercel Edge Functions if 'jsonwebtoken' uses Node APIs.
-      // Consider using 'jose' library if build/runtime errors occur.
-      const token = jwt.sign({}, Buffer.from(secret, 'hex'), {
-        keyid: id,
-        algorithm: 'HS256',
-        expiresIn: '5m',
-        audience: `/admin/`
-      });
-      return token;
-    } catch (err) {
-      console.error("JWT Generation Error:", err);
-      throw new Error('Failed to generate Admin API JWT');
-    }
-  }
-
-  /**
-   * Fetch a post from Ghost Admin API using JWT
+   * Fetch a post from Ghost API
    */
   private async fetchPost(postId: string): Promise<any> {
+    const cacheBuster = Date.now();
+    // Use Admin API endpoint
     const url = new URL(`${this.ghostUrl}/ghost/api/admin/posts/${postId}/`);
     
-    // Add query parameters
+    // Add query parameters (Admin API uses different params, 'formats' needed for plaintext/html)
     url.searchParams.append('include', 'tags,authors');
-    url.searchParams.append('formats', 'html,plaintext');
+    url.searchParams.append('formats', 'html,plaintext'); // Request formats needed for excerpt/plaintext
+    url.searchParams.append('cache', cacheBuster.toString()); // Cache buster might not be needed/respected by Admin API but harmless
 
-    // Generate JWT for authorization
-    const token = this.generateJwt();
+    // Generate the JWT
+    const token = await generateAdminToken(this.ghostKey);
 
     const response = await fetch(url.toString(), {
       headers: {
         'Accept': 'application/json',
         'Accept-Version': this.ghostVersion,
-        'Authorization': `Ghost ${token}` // Use JWT here
+        // Use Authorization header with the generated JWT
+        'Authorization': `Ghost ${token}`
       }
     });
     
     if (!response.ok) {
-      const errorBody = await response.text();
-      console.error("Ghost API Error:", errorBody);
       throw new Error(`Failed to fetch post: ${response.status} ${response.statusText}`);
     }
     
+    // Admin API returns the post directly in the 'posts' array
     const data = await response.json() as { posts: any[] };
     if (!data.posts || !Array.isArray(data.posts) || data.posts.length === 0) {
       throw new Error(`No post found with ID: ${postId}`);

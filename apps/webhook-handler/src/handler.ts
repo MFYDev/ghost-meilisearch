@@ -1,7 +1,6 @@
 import { Handler } from '@netlify/functions';
 import * as cheerio from 'cheerio';
-import * as jwt from 'jsonwebtoken'; // Import jsonwebtoken
-import * as crypto from 'crypto'; // Import crypto for signature verification
+import * as jose from 'jose'; // Import jose for JWT generation
 
 // Webhook payload interface with essential fields
 interface WebhookPayload {
@@ -80,7 +79,7 @@ function verifyWebhookSignature(signature: string, body: string, secret: string)
     // Create message by combining stringified body and timestamp
     const message = `${body}${timestamp}`;
     
-    // Use the crypto module (already imported)
+    // For Node.js, we can use the crypto module
     const hmac = require('crypto').createHmac('sha256', secret);
     hmac.update(message);
     const computedSignature = hmac.digest('hex');
@@ -110,10 +109,30 @@ function isPublishedAndPublic(postData: { status?: string; visibility?: string }
   return postData?.status === 'published' && postData?.visibility === 'public';
 }
 
+// Helper function to generate Ghost Admin API JWT using jose
+async function generateAdminToken(apiKey: string): Promise<string> {
+  const [id, secret] = apiKey.split(':');
+  if (!id || !secret) {
+    throw new Error('Invalid Ghost Admin API Key format');
+  }
+
+  const secretBuffer = Buffer.from(secret, 'hex'); // Node.js Buffer for Netlify
+  const alg = 'HS256';
+
+  const jwt = await new jose.SignJWT({})
+    .setProtectedHeader({ alg, kid: id })
+    .setIssuedAt()
+    .setExpirationTime('5m')
+    .setAudience('/admin/')
+    .sign(secretBuffer);
+
+  return jwt;
+}
+
 // NetlifyGhostMeilisearchManager - A simplified version that uses fetch API
 class NetlifyGhostMeilisearchManager {
   private ghostUrl: string;
-  private ghostAdminApiKey: string; // Store the full Admin API Key
+  private ghostKey: string;
   private ghostVersion: string;
   private meilisearchHost: string;
   private meilisearchApiKey: string;
@@ -125,7 +144,7 @@ class NetlifyGhostMeilisearchManager {
     index: { name: string; primaryKey: string };
   }) {
     this.ghostUrl = config.ghost.url;
-    this.ghostAdminApiKey = config.ghost.key; // Store the Admin API Key
+    this.ghostKey = config.ghost.key; // This will now be the Admin API Key
     this.ghostVersion = config.ghost.version;
     this.meilisearchHost = config.meilisearch.host;
     this.meilisearchApiKey = config.meilisearch.apiKey;
@@ -133,54 +152,35 @@ class NetlifyGhostMeilisearchManager {
   }
 
   /**
-   * Generate Ghost Admin API JWT
-   */
-  private generateJwt(): string {
-    const [id, secret] = this.ghostAdminApiKey.split(':');
-    if (!id || !secret) {
-      throw new Error('Invalid GHOST_ADMIN_API_KEY format. Expected id:secret');
-    }
-    try {
-      const token = jwt.sign({}, Buffer.from(secret, 'hex'), {
-        keyid: id,
-        algorithm: 'HS256',
-        expiresIn: '5m',
-        audience: `/admin/`
-      });
-      return token;
-    } catch (err) {
-      console.error("JWT Generation Error:", err);
-      throw new Error('Failed to generate Admin API JWT');
-    }
-  }
-
-  /**
-   * Fetch a post from Ghost Admin API using JWT
+   * Fetch a post from Ghost API
    */
   private async fetchPost(postId: string): Promise<any> {
+    const cacheBuster = Date.now();
+    // Use Admin API endpoint
     const url = new URL(`${this.ghostUrl}/ghost/api/admin/posts/${postId}/`);
     
-    // Add query parameters
+    // Add query parameters (Admin API uses different params, 'formats' needed for plaintext/html)
     url.searchParams.append('include', 'tags,authors');
-    url.searchParams.append('formats', 'html,plaintext');
+    url.searchParams.append('formats', 'html,plaintext'); // Request formats needed for excerpt/plaintext
+    url.searchParams.append('cache', cacheBuster.toString()); // Cache buster might not be needed/respected by Admin API but harmless
 
-    // Generate JWT for authorization
-    const token = this.generateJwt();
+    // Generate the JWT
+    const token = await generateAdminToken(this.ghostKey);
 
     const response = await fetch(url.toString(), {
       headers: {
         'Accept': 'application/json',
         'Accept-Version': this.ghostVersion,
-        'Authorization': `Ghost ${token}` // Use JWT here
+        // Use Authorization header with the generated JWT
+        'Authorization': `Ghost ${token}`
       }
     });
     
     if (!response.ok) {
-      const errorBody = await response.text();
-      console.error("Ghost API Error:", errorBody);
       throw new Error(`Failed to fetch post: ${response.status} ${response.statusText}`);
     }
     
+    // Admin API returns the post directly in the 'posts' array
     const data = await response.json() as { posts: any[] };
     if (!data.posts || !Array.isArray(data.posts) || data.posts.length === 0) {
       throw new Error(`No post found with ID: ${postId}`);
