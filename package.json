@@ -67,7 +67,6 @@
         "cheerio": "^1.0.0"
     },
     "devDependencies": {
-        "@tryghost/content-api": "^1.11.21",
         "@types/cheerio": "^0.22.35",
         "axios": "^1.8.4",
         "concurrently": "^9.1.2",
