@@ -9,7 +9,9 @@ export interface Post {
   title: string;
   slug: string;
   html: string;
-  plaintext: string;
+  // plaintext: string; // Removed
+  plaintext_public: string | null; // Added
+  plaintext_private: string | null; // Added
   excerpt: string;
   url: string;
   visibility: string;
@@ -29,7 +31,7 @@ export class GhostMeilisearchManager {
 
   constructor(config: Config) {
     this.config = config;
-    
+
     // Initialize Ghost Admin API client
     // The 'key' from config is expected to be the Admin API key (id:secret)
     this.ghost = new GhostAdminAPI({
@@ -44,7 +46,7 @@ export class GhostMeilisearchManager {
       apiKey: config.meilisearch.apiKey,
       timeout: config.meilisearch.timeout
     });
-    
+
     this.index = this.meilisearch.index(config.index.name);
   }
 
@@ -56,12 +58,12 @@ export class GhostMeilisearchManager {
       // Check if index exists
       const indexes = await this.meilisearch.getIndexes();
       const existingIndex = indexes.results.find(idx => idx.uid === this.config.index.name);
-      
+
       // Create index if it doesn't exist
       if (!existingIndex) {
         await this.meilisearch.createIndex(this.config.index.name, { primaryKey: this.config.index.primaryKey });
       }
-      
+
       // Configure index settings
       await this.configureIndexSettings();
     } catch (error) {
@@ -77,19 +79,19 @@ export class GhostMeilisearchManager {
     const searchableAttributes = this.config.index.fields
       .filter(field => field.searchable)
       .map(field => field.name);
-    
+
     const filterableAttributes = this.config.index.fields
       .filter(field => field.filterable)
       .map(field => field.name);
-    
+
     const sortableAttributes = this.config.index.fields
       .filter(field => field.sortable)
       .map(field => field.name);
-    
+
     const displayedAttributes = this.config.index.fields
       .filter(field => field.displayed)
       .map(field => field.name);
-    
+
     // Update index settings
     await this.index.updateSearchableAttributes(searchableAttributes);
     await this.index.updateFilterableAttributes(filterableAttributes);
@@ -98,98 +100,126 @@ export class GhostMeilisearchManager {
   }
 
   /**
+   * Helper function to extract and clean text from HTML content using Cheerio.
+   * Applies basic cleaning and structural formatting.
+   */
+  private extractAndCleanText(htmlContent: string | null | undefined): string {
+    if (!htmlContent) {
+      return '';
+    }
+
+    try {
+      const $ = cheerio.load(htmlContent);
+
+      // Remove script and style tags
+      $('script, style').remove();
+
+      // Handle images - replace with alt text or remove
+      $('img').each((_, el) => {
+        const alt = $(el).attr('alt');
+        if (alt) {
+          $(el).replaceWith(` ${alt} `);
+        } else {
+          $(el).remove();
+        }
+      });
+
+      // Handle links - keep text content
+       $('a').each((_, el) => {
+         const href = $(el).attr('href');
+         const text = $(el).text().trim();
+         // If the link has text and it's not just the URL, preserve it
+         if (text && href !== text) {
+           $(el).replaceWith(` ${text} `);
+         }
+         // If link text is same as href or empty, cheerio's text() will handle it.
+       });
+
+      // Add structural newlines for block elements
+      $('p, div, h1, h2, h3, h4, h5, h6, br, hr, blockquote').each((_, el) => {
+        $(el).append('\n');
+      });
+      $('li').each((_, el) => {
+        $(el).prepend('• ');
+        $(el).append('\n');
+      });
+      $('tr').each((_, el) => {
+        $(el).append('\n');
+      });
+
+      // Get text and normalize whitespace
+      let text = $('body').text(); // Use body context if available, else root
+      text = text.replace(/\s+/g, ' ').trim();
+      return text;
+
+    } catch (error) {
+      console.error('Cheerio parsing error during text extraction:', error);
+      // Fallback to basic regex cleaning if Cheerio fails
+      return htmlContent
+        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, ' ')
+        .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, ' ')
+        .replace(/<a[^>]*>([^<]*)<\/a>/gi, ' $1 ')
+        .replace(/<(strong|b|em|i|mark|span)[^>]*>([^<]*)<\/(strong|b|em|i|mark|span)>/gi, ' $2 ')
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&/g, '&')
+        .replace(/</g, '<')
+        .replace(/>/g, '>')
+        .replace(/"/g, '"')
+        .replace(/'/g, "'")
+        .replace(/\s+/g, ' ').trim();
+    }
+  }
+
+
+  /**
    * Transform Ghost post to format suitable for Meilisearch
    */
   private transformPost(post: GhostPost): Post {
-    // Generate plaintext from HTML if not available
-    // Use type assertion since plaintext might not be directly defined in the GhostPost type
-    let plaintext = (post as any).plaintext || '';
-    
-    // Always try to enhance/improve plaintext extraction from HTML
-    // even if plaintext already exists
+    let plaintext_public: string | null = null;
+    let plaintext_private: string | null = null;
+    const visibility = post.visibility || 'public'; // Default to public
+    // Using a custom selector function to find the comment-based divider
+    const dividerSelector = '<!--members-only-->';
+
     if (post.html) {
-      try {
-        // Load HTML into cheerio
-        const $ = cheerio.load(post.html);
-        
-        // Remove script and style tags with their content
-        $('script, style').remove();
-        
-        // Extract alt text from images and add it to the text
-        $('img').each((_, el) => {
-          const alt = $(el).attr('alt');
-          if (alt) {
-            $(el).replaceWith(` ${alt} `);
+      if (visibility === 'public') {
+        // Public post: Extract all content as public
+        plaintext_public = this.extractAndCleanText(post.html);
+        plaintext_private = null;
+      } else {
+        // Non-public post: Check for divider
+        try {
+          // Check if the HTML contains the comment divider
+          if (post.html.includes(dividerSelector)) {
+            // Divider found: Split content
+            const parts = post.html.split(dividerSelector);
+            
+            // Extract text from parts
+            plaintext_public = this.extractAndCleanText(parts[0]);
+            plaintext_private = this.extractAndCleanText(parts[1]);
           } else {
-            $(el).remove();
+            // No divider found: Index all as private
+            plaintext_public = null;
+            plaintext_private = this.extractAndCleanText(post.html);
           }
-        });
-        
-        // Handle special block elements for better formatting
-        // Add line breaks for block elements to preserve structure
-        $('p, div, h1, h2, h3, h4, h5, h6, br, hr, blockquote').each((_, el) => {
-          $(el).append('\n');
-        });
-        
-        // Special handling for list items
-        $('li').each((_, el) => {
-          $(el).prepend('• ');
-          $(el).append('\n');
-        });
-        
-        // Handle tables - add spacing and structure
-        $('tr').each((_, el) => {
-          $(el).append('\n');
-        });
-        
-        // Handle links - keep their text
-        $('a').each((_, el) => {
-          const href = $(el).attr('href');
-          const text = $(el).text().trim();
-          // If the link has text and it's not just the URL, preserve it
-          if (text && href !== text) {
-            $(el).replaceWith(` ${text} `);
-          }
-        });
-        
-        // Get the text content of the body
-        // Cheerio's text() method automatically handles most HTML entities
-        let cleanHtml = $('body').text();
-        
-        // Normalize whitespace
-        cleanHtml = cleanHtml.replace(/\s+/g, ' ').trim();
-        
-        // If we didn't have plaintext or if our extracted text is more comprehensive, use it
-        if (!plaintext || cleanHtml.length > plaintext.length) {
-          plaintext = cleanHtml;
+        } catch (error) {
+           console.error(`Error processing HTML for post ${post.id}:`, error);
+           // Fallback: Treat as non-public without divider
+           plaintext_public = null;
+           plaintext_private = this.extractAndCleanText(post.html); // Use helper for fallback too
         }
-      } catch (error) {
-        // Fallback to simple regex if cheerio parsing fails
-        console.error('HTML parsing error:', error);
-        
-        let cleanHtml = post.html
-          // Remove script and style tags with their content
-          .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, ' ')
-          .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, ' ')
-          // Replace link text with its content, preserving spaces
-          .replace(/<a[^>]*>([^<]*)<\/a>/gi, ' $1 ')
-          // Replace inline elements with their content, preserving spaces
-          .replace(/<(strong|b|em|i|mark|span)[^>]*>([^<]*)<\/(strong|b|em|i|mark|span)>/gi, ' $2 ')
-          // Replace all remaining HTML tags with spaces to preserve word boundaries
-          .replace(/<[^>]*>/g, ' ')
-          // Clean up entities and decode HTML entities
-          .replace(/&nbsp;/g, ' ')
-          .replace(/&amp;/g, '&')
-          .replace(/&lt;/g, '<')
-          .replace(/&gt;/g, '>')
-          .replace(/&quot;/g, '"')
-          .replace(/&#39;/g, "'")
-          // Normalize whitespace
-          .replace(/\s+/g, ' ').trim();
-        
-        if (!plaintext || cleanHtml.length > plaintext.length) {
-          plaintext = cleanHtml;
-        }
+      }
+    } else {
+      // Handle case where post.html is empty or null
+      // Use existing plaintext if available, otherwise nulls
+      const existingPlaintext = (post as any).plaintext || '';
+      if (visibility === 'public') {
+          plaintext_public = existingPlaintext || null;
+          plaintext_private = null;
+      } else {
+          plaintext_public = null;
+          plaintext_private = existingPlaintext || null;
       }
     }
 
@@ -198,10 +228,11 @@ export class GhostMeilisearchManager {
       title: post.title || '',
       slug: post.slug || '',
       html: post.html || '',
-      plaintext: plaintext,
+      plaintext_public: plaintext_public, // Use new field
+      plaintext_private: plaintext_private, // Use new field
       excerpt: post.excerpt || '',
       url: post.url || '',
-      visibility: post.visibility || 'public',
+      visibility: visibility, // Use the determined visibility
       published_at: new Date(post.published_at || Date.now()).getTime(),
       updated_at: new Date(post.updated_at || Date.now()).getTime()
     };
@@ -221,11 +252,15 @@ export class GhostMeilisearchManager {
     }
 
     // Add any additional fields specified in the config
+    // Ensure we don't overwrite the fields we just set
+    const handledFields = ['id', 'title', 'slug', 'html', 'plaintext_public', 'plaintext_private', 'excerpt', 'url', 'visibility', 'published_at', 'updated_at', 'feature_image', 'tags', 'authors'];
     this.config.index.fields.forEach((field: IndexField) => {
       const fieldName = field.name;
-      const value = post[fieldName as keyof GhostPost];
-      if (!transformed[fieldName] && value !== undefined && value !== null) {
-        transformed[fieldName] = value;
+      if (!handledFields.includes(fieldName)) {
+          const value = post[fieldName as keyof GhostPost];
+          if (value !== undefined && value !== null) {
+              transformed[fieldName] = value;
+          }
       }
     });
 
@@ -239,10 +274,10 @@ export class GhostMeilisearchManager {
     try {
       const allPosts = await this.fetchAllPosts();
       const documents = allPosts.map(post => this.transformPost(post));
-      
+
       // Add documents to Meilisearch
       const response = await this.index.addDocuments(documents);
-      
+
       // Wait for task to complete
       await this.meilisearch.waitForTask(response.taskUid);
     } catch (error) {
@@ -286,7 +321,7 @@ export class GhostMeilisearchManager {
            // If meta is missing on the first page, assume only one page
            totalPages = 1;
         }
-        
+
         currentPage++;
 
       } catch (error) {
@@ -306,7 +341,7 @@ export class GhostMeilisearchManager {
     try {
       // Add a small delay to ensure Ghost API returns the latest content
       await new Promise(resolve => setTimeout(resolve, 500));
-      
+
       // Fetch the post using the Admin API client
       // The first argument to read is an object identifying the post (e.g., by id or slug)
       // The second argument contains options like include and formats
@@ -314,10 +349,10 @@ export class GhostMeilisearchManager {
         include: 'tags,authors',
         formats: 'html,plaintext' // Request necessary formats
       });
-      
+
       const document = this.transformPost(post);
       const response = await this.index.addDocuments([document]);
-      
+
       // Wait for task to complete
       await this.meilisearch.waitForTask(response.taskUid);
     } catch (error) {
@@ -331,7 +366,7 @@ export class GhostMeilisearchManager {
   async deletePost(postId: string): Promise<void> {
     try {
       const response = await this.index.deleteDocument(postId);
-      
+
       // Wait for task to complete
       await this.meilisearch.waitForTask(response.taskUid);
     } catch (error) {
@@ -345,7 +380,7 @@ export class GhostMeilisearchManager {
   async clearIndex(): Promise<void> {
     try {
       const response = await this.index.deleteAllDocuments();
-      
+
       // Wait for task to complete
       await this.meilisearch.waitForTask(response.taskUid);
     } catch (error) {

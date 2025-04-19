@@ -54,12 +54,20 @@
                 "displayed": true
             },
             {
-                "name": "plaintext",
+                "name": "plaintext_public",
                 "type": "string",
                 "searchable": true,
                 "filterable": false,
                 "sortable": false,
                 "displayed": true
+            },
+            {
+                "name": "plaintext_private",
+                "type": "string",
+                "searchable": true,
+                "filterable": false,
+                "sortable": false,
+                "displayed": false
             },
             {
                 "name": "feature_image",
