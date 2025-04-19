@@ -35,25 +35,25 @@ function determineEventType(payload: WebhookPayload): string {
   if (payload.post?.previous?.id && (!payload.post.current || Object.keys(payload.post.current).length === 0)) {
     return 'post.deleted';
   }
-  
+
   // Check for standard deletion
   if (payload.post?.id && !payload.post.current) {
     return 'post.deleted';
   }
-  
+
   // Handle normal post events
   if (payload.post?.current) {
     const { post } = payload;
-    
+
     // If we have a current post, it's either an add or update
     if (!post.previous || Object.keys(post.previous).length === 0) {
       return 'post.added';
     }
-    
+
     // If we have both current and previous, it's an update
     return 'post.updated';
   }
-  
+
   // Default fallback
   return 'unknown';
 }
@@ -70,7 +70,7 @@ function verifyWebhookSignature(signature: string, body: string, secret: string)
 
     const [, providedSignature] = signaturePart.split('=');
     const [, timestamp] = timestampPart.split('=');
-    
+
     if (!providedSignature || !timestamp) {
       console.error('Could not extract signature or timestamp');
       return false;
@@ -78,15 +78,15 @@ function verifyWebhookSignature(signature: string, body: string, secret: string)
 
     // Create message by combining stringified body and timestamp
     const message = `${body}${timestamp}`;
-    
+
     // For Node.js, we can use the crypto module
     const hmac = require('crypto').createHmac('sha256', secret);
     hmac.update(message);
     const computedSignature = hmac.digest('hex');
-    
+
     console.log('Provided signature:', providedSignature);
     console.log('Computed signature:', computedSignature);
-    
+
     return providedSignature === computedSignature;
   } catch (error) {
     console.error('Error verifying signature:', error);
@@ -98,7 +98,7 @@ function verifyWebhookSignature(signature: string, body: string, secret: string)
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number, operation: string): Promise<T> {
   return Promise.race([
     promise,
-    new Promise<T>((_, reject) => 
+    new Promise<T>((_, reject) =>
       setTimeout(() => reject(new Error(`Operation '${operation}' timed out after ${timeoutMs}ms`)), timeoutMs)
     )
   ]);
@@ -158,7 +158,7 @@ class NetlifyGhostMeilisearchManager {
     const cacheBuster = Date.now();
     // Use Admin API endpoint
     const url = new URL(`${this.ghostUrl}/ghost/api/admin/posts/${postId}/`);
-    
+
     // Add query parameters (Admin API uses different params, 'formats' needed for plaintext/html)
     url.searchParams.append('include', 'tags,authors');
     url.searchParams.append('formats', 'html,plaintext'); // Request formats needed for excerpt/plaintext
@@ -175,17 +175,89 @@ class NetlifyGhostMeilisearchManager {
         'Authorization': `Ghost ${token}`
       }
     });
-    
+
     if (!response.ok) {
       throw new Error(`Failed to fetch post: ${response.status} ${response.statusText}`);
     }
-    
+
     // Admin API returns the post directly in the 'posts' array
     const data = await response.json() as { posts: any[] };
     if (!data.posts || !Array.isArray(data.posts) || data.posts.length === 0) {
       throw new Error(`No post found with ID: ${postId}`);
     }
     return data.posts[0];
+  }
+
+  /**
+   * Helper function to extract and clean text from HTML content using Cheerio.
+   * Applies basic cleaning and structural formatting.
+   */
+  private extractAndCleanText(htmlContent: string | null | undefined): string {
+    if (!htmlContent) {
+      return '';
+    }
+
+    try {
+      const $ = cheerio.load(htmlContent);
+
+      // Remove script and style tags
+      $('script, style').remove();
+
+      // Handle images - replace with alt text or remove
+      $('img').each((_, el) => {
+        const alt = $(el).attr('alt');
+        if (alt) {
+          $(el).replaceWith(` ${alt} `);
+        } else {
+          $(el).remove();
+        }
+      });
+
+      // Handle links - keep text content
+       $('a').each((_, el) => {
+         const href = $(el).attr('href');
+         const text = $(el).text().trim();
+         // If the link has text and it's not just the URL, preserve it
+         if (text && href !== text) {
+           $(el).replaceWith(` ${text} `);
+         }
+         // If link text is same as href or empty, cheerio's text() will handle it.
+       });
+
+      // Add structural newlines for block elements
+      $('p, div, h1, h2, h3, h4, h5, h6, br, hr, blockquote').each((_, el) => {
+        $(el).append('\n');
+      });
+      $('li').each((_, el) => {
+        $(el).prepend('• ');
+        $(el).append('\n');
+      });
+      $('tr').each((_, el) => {
+        $(el).append('\n');
+      });
+
+      // Get text and normalize whitespace
+      let text = $('body').text(); // Use body context if available, else root
+      text = text.replace(/\s+/g, ' ').trim();
+      return text;
+
+    } catch (error) {
+      console.error('Cheerio parsing error during text extraction:', error);
+      // Fallback to basic regex cleaning if Cheerio fails
+      return htmlContent
+        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, ' ')
+        .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, ' ')
+        .replace(/<a[^>]*>([^<]*)<\/a>/gi, ' $1 ')
+        .replace(/<(strong|b|em|i|mark|span)[^>]*>([^<]*)<\/(strong|b|em|i|mark|span)>/gi, ' $2 ')
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&/g, '&')
+        .replace(/</g, '<')
+        .replace(/>/g, '>')
+        .replace(/"/g, '"')
+        .replace(/'/g, "'")
+        .replace(/\s+/g, ' ').trim();
+    }
   }
 
   /**
@@ -196,99 +268,67 @@ class NetlifyGhostMeilisearchManager {
       throw new Error('Post data is missing or invalid');
     }
 
+    let plaintext_public: string | null = null;
+    let plaintext_private: string | null = null;
+    const visibility = post.visibility || 'public'; // Default to public
+    const dividerSelector = '<!--members-only-->';
+
+    if (post.html) {
+      if (visibility === 'public') {
+        // Public post: Extract all content as public
+        plaintext_public = this.extractAndCleanText(post.html);
+        plaintext_private = null;
+      } else {
+        // Non-public post: Check for divider
+        try {
+          // Check if the HTML contains the comment divider
+          if (post.html.includes(dividerSelector)) {
+            // Divider found: Split content
+            const parts = post.html.split(dividerSelector);
+            
+            // Extract text from parts
+            plaintext_public = this.extractAndCleanText(parts[0]);
+            plaintext_private = this.extractAndCleanText(parts[1]);
+          } else {
+            // No divider found: Index all as private
+            plaintext_public = null;
+            plaintext_private = this.extractAndCleanText(post.html);
+          }
+        } catch (error) {
+           console.error(`Error processing HTML for post ${post.id}:`, error);
+           // Fallback: Treat as non-public without divider
+           plaintext_public = null;
+           plaintext_private = this.extractAndCleanText(post.html); // Use helper for fallback too
+        }
+      }
+    } else {
+      // Handle case where post.html is empty or null
+      // Use existing plaintext if available, otherwise nulls
+      const existingPlaintext = (post as any).plaintext || '';
+      if (visibility === 'public') {
+          plaintext_public = existingPlaintext || null;
+          plaintext_private = null;
+      } else {
+          plaintext_public = null;
+          plaintext_private = existingPlaintext || null;
+      }
+    }
+
     // Extract tags and authors
     const tags = post.tags?.map((tag: any) => tag.name) || [];
     const authors = post.authors?.map((author: any) => author.name) || [];
-    
+
     // Convert dates to timestamps
     const publishedAt = post.published_at ? new Date(post.published_at).getTime() : null;
     const updatedAt = post.updated_at ? new Date(post.updated_at).getTime() : null;
-    
-    // Generate plaintext from HTML
-    let plaintext = '';
-    if (post.html) {
-      try {
-        // Load HTML into cheerio
-        const $ = cheerio.load(post.html);
-        
-        // Remove script and style tags with their content
-        $('script, style').remove();
-        
-        // Extract alt text from images and add it to the text
-        $('img').each((_, el) => {
-          const alt = $(el).attr('alt');
-          if (alt) {
-            $(el).replaceWith(` ${alt} `);
-          } else {
-            $(el).remove();
-          }
-        });
-        
-        // Handle special block elements for better formatting
-        // Add line breaks for block elements to preserve structure
-        $('p, div, h1, h2, h3, h4, h5, h6, br, hr, blockquote').each((_, el) => {
-          $(el).append('\n');
-        });
-        
-        // Special handling for list items
-        $('li').each((_, el) => {
-          $(el).prepend('• ');
-          $(el).append('\n');
-        });
-        
-        // Handle tables - add spacing and structure
-        $('tr').each((_, el) => {
-          $(el).append('\n');
-        });
-        
-        // Handle links - keep their text
-        $('a').each((_, el) => {
-          const href = $(el).attr('href');
-          const text = $(el).text().trim();
-          // If the link has text and it's not just the URL, preserve it
-          if (text && href !== text) {
-            $(el).replaceWith(` ${text} `);
-          }
-        });
-        
-        // Get the text content of the body
-        // Cheerio's text() method automatically handles most HTML entities
-        plaintext = $('body').text();
-        
-        // Normalize whitespace
-        plaintext = plaintext.replace(/\s+/g, ' ').trim();
-      } catch (error) {
-        // Fallback to simple regex if cheerio parsing fails
-        console.error('HTML parsing error:', error);
-        
-        plaintext = post.html
-          // Remove script and style tags with their content
-          .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, ' ')
-          .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, ' ')
-          // Replace link text with its content, preserving spaces
-          .replace(/<a[^>]*>([^<]*)<\/a>/gi, ' $1 ')
-          // Replace inline elements with their content, preserving spaces
-          .replace(/<(strong|b|em|i|mark|span)[^>]*>([^<]*)<\/(strong|b|em|i|mark|span)>/gi, ' $2 ')
-          // Replace all remaining HTML tags with spaces to preserve word boundaries
-          .replace(/<[^>]*>/g, ' ')
-          // Clean up entities and decode HTML entities
-          .replace(/&nbsp;/g, ' ')
-          .replace(/&amp;/g, '&')
-          .replace(/&lt;/g, '<')
-          .replace(/&gt;/g, '>')
-          .replace(/&quot;/g, '"')
-          .replace(/&#39;/g, "'")
-          // Normalize whitespace
-          .replace(/\s+/g, ' ').trim();
-      }
-    }
-    
+
     return {
       id: post.id,
       title: post.title,
       slug: post.slug,
       html: post.html,
-      plaintext: plaintext,
+      plaintext_public: plaintext_public, // Use new field
+      plaintext_private: plaintext_private, // Use new field
       excerpt: post.excerpt || '',
       url: post.url,
       feature_image: post.feature_image,
@@ -296,7 +336,7 @@ class NetlifyGhostMeilisearchManager {
       updated_at: updatedAt,
       tags,
       authors,
-      visibility: post.visibility || 'public' // Add visibility, default to public if missing
+      visibility: visibility // Use the determined visibility
     };
   }
 
@@ -307,13 +347,13 @@ class NetlifyGhostMeilisearchManager {
     try {
       // Add a small delay to ensure Ghost API returns the latest content
       await new Promise(resolve => setTimeout(resolve, 500));
-      
+
       // Fetch the post from Ghost
       const post = await this.fetchPost(postId);
-      
+
       // Transform the post
       const document = this.transformPost(post);
-      
+
       // Add the document to Meilisearch
       const url = new URL(`${this.meilisearchHost}/indexes/${this.indexName}/documents`);
       const response = await fetch(url.toString(), {
@@ -324,7 +364,7 @@ class NetlifyGhostMeilisearchManager {
         },
         body: JSON.stringify([document])
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json() as { message?: string };
         throw new Error(`Meilisearch error: ${errorData.message || response.statusText}`);
@@ -346,7 +386,7 @@ class NetlifyGhostMeilisearchManager {
           'Authorization': `Bearer ${this.meilisearchApiKey}`
         }
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json() as { message?: string };
         throw new Error(`Meilisearch error: ${errorData.message || response.statusText}`);
@@ -402,13 +442,13 @@ export const handler: Handler = async (event, context) => {
     } catch (parseError) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ 
-          error: 'Invalid JSON payload', 
-          details: parseError instanceof Error ? parseError.message : 'Unknown error' 
+        body: JSON.stringify({
+          error: 'Invalid JSON payload',
+          details: parseError instanceof Error ? parseError.message : 'Unknown error'
         })
       };
     }
-    
+
     // Determine the event type and extract post ID
     const webhookEventType = determineEventType(payload);
     const postId = extractPostId(payload);
@@ -424,13 +464,13 @@ export const handler: Handler = async (event, context) => {
     // Load configuration - Require Admin API Key now
     const requiredVars = ['GHOST_URL', 'GHOST_ADMIN_API_KEY', 'MEILISEARCH_HOST', 'MEILISEARCH_API_KEY'];
     const missingVars = requiredVars.filter(varName => !process.env[varName]);
-      
+
     if (missingVars.length > 0) {
       return {
         statusCode: 500,
-        body: JSON.stringify({ 
-          error: 'Missing configuration', 
-          details: `Missing required environment variables: ${missingVars.join(', ')}` 
+        body: JSON.stringify({
+          error: 'Missing configuration',
+          details: `Missing required environment variables: ${missingVars.join(', ')}`
         })
       };
     }
@@ -467,7 +507,7 @@ export const handler: Handler = async (event, context) => {
         OPERATION_TIMEOUT,
         `Deleting post ${postId}`
       );
-      
+
       return {
         statusCode: 200,
         body: JSON.stringify({ success: true, message: `Post ${postId} deleted from index` })
@@ -477,7 +517,7 @@ export const handler: Handler = async (event, context) => {
       if (payload.post?.current) {
         const { id, status, visibility, title } = payload.post.current;
         console.log(`📄 Processing post: "${title || 'Untitled'}" (${id || postId})`);
-        
+
         if (status === 'published') { // Index all published posts, regardless of visibility
           console.log('📝 Indexing published post');
           await withTimeout(
@@ -486,7 +526,7 @@ export const handler: Handler = async (event, context) => {
             `Indexing post ${postId}`
           );
           console.log('✨ Post indexed successfully');
-          
+
           return {
             statusCode: 200,
             body: JSON.stringify({ success: true, message: `Post ${postId} indexed successfully` })
@@ -499,30 +539,35 @@ export const handler: Handler = async (event, context) => {
             `Deleting post ${postId}`
           );
           console.log('✨ Post removed successfully');
-          
+
           return {
             statusCode: 200,
-            body: JSON.stringify({ 
-              success: true, 
-              message: `Post ${postId} removed from index (not published)`
-            })
+            body: JSON.stringify({ success: true, message: `Post ${postId} removed from index (not published)` })
           };
         }
+      } else {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({
+            warning: `Post data missing in payload`,
+            payload: payload // Include payload for debugging
+          })
+        };
       }
+    } else {
+      // Ignore other event types
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ success: true, message: `Event type ${webhookEventType} ignored` })
+      };
     }
-
-    // Handle unknown event types
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: `Unknown or unsupported event type: ${webhookEventType}` })
-    };
   } catch (error) {
-    console.error('Error processing webhook:', error);
+    console.error('Webhook handler error:', error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ 
-        error: 'Internal server error', 
-        details: error instanceof Error ? error.message : 'Unknown error'
+      body: JSON.stringify({
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : String(error)
       })
     };
   }

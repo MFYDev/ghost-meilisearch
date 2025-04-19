@@ -16,10 +16,14 @@ class GhostMeilisearchSearch {
             theme: "system",
             enableHighlighting: true,
             searchFields: {
+                // Default fields to search and highlight
                 title: { weight: 5, highlight: true },
-                plaintext: { weight: 4, highlight: true },
+                plaintext_public: { weight: 4, highlight: true }, // Changed from plaintext
+                plaintext_private: { weight: 4, highlight: false }, // Added private field (searchable, not highlighted)
                 excerpt: { weight: 3, highlight: true },
-                html: { weight: 1, highlight: true },
+                tags: { weight: 2, highlight: false }, // Added tags
+                authors: { weight: 2, highlight: false }, // Added authors
+                // html: { weight: 1, highlight: true }, // Removed html by default
             },
             // AI Search Configuration
             enableAiSearch: false,
@@ -31,6 +35,11 @@ class GhostMeilisearchSearch {
         this.config = {
             ...defaultConfig,
             ...config,
+            // Deep merge searchFields if provided by user
+            searchFields: {
+                ...defaultConfig.searchFields,
+                ...(config.searchFields || {}),
+            },
         };
 
         // Initialize state
@@ -570,17 +579,21 @@ class GhostMeilisearchSearch {
             // Prepare base search parameters
             const baseSearchParams = {
                 limit: 100, // Consider making this configurable?
+                // Dynamically get fields to highlight based on config
                 attributesToHighlight: Object.entries(this.config.searchFields)
-                    .filter(([_, config]) => config.highlight)
-                    .map(([field]) => field),
+                    .filter(([_, fieldConfig]) => fieldConfig.highlight)
+                    .map(([fieldName]) => fieldName),
                 attributesToRetrieve: [
+                    "id", // Needed for potential logic
                     "title",
                     "url",
                     "excerpt",
-                    "plaintext",
+                    "plaintext_public", // Retrieve new public field
                     "tags",
+                    "authors",
                     "slug", // Ensure slug is retrieved
-                    "visibility", // <-- Add visibility here
+                    "visibility", // Retrieve visibility
+                    "_matchesInfo", // Retrieve match info
                     // Add any other fields needed for display or logic
                 ],
                 highlightPreTag: "<em>", // Ensure consistent highlighting tags
@@ -589,6 +602,19 @@ class GhostMeilisearchSearch {
 
             let aiSearchPromise = Promise.resolve({ hits: [] }); // Default to empty results
             let normalSearchPromise;
+
+            // Dynamically get fields to search on based on config weights
+            const attributesToSearchOn = Object.entries(
+                this.config.searchFields
+            )
+                .sort(([, a], [, b]) => (b.weight || 0) - (a.weight || 0)) // Sort by weight desc
+                .map(([fieldName]) => fieldName);
+
+            // Add plaintext_private to searchable attributes for normal search
+            const normalAttributesToSearchOn = [
+                ...attributesToSearchOn,
+                "plaintext_private", // Always search private field
+            ];
 
             // --- Conditional Search Execution ---
             if (this.config.enableAiSearch && this.config.aiSearchEmbedder) {
@@ -603,15 +629,14 @@ class GhostMeilisearchSearch {
                         embedder: this.config.aiSearchEmbedder,
                         // semanticRatio: 0.9 // Optional: Tune ratio if needed
                     },
-                    // attributesToSearchOn: undefined, // Let hybrid handle searchable attributes
-                    // matchingStrategy: undefined // Let hybrid handle matching
+                    // Let hybrid handle searchable attributes and matching strategy
                 };
                 aiSearchPromise = this.index.search(query, aiSearchParams);
 
                 // Normal Search Parameters (when AI is also enabled)
                 const normalSearchParams = {
                     ...baseSearchParams,
-                    attributesToSearchOn: ["title", "plaintext", "excerpt"], // Specify for keyword search
+                    attributesToSearchOn: normalAttributesToSearchOn, // Use derived + private
                     matchingStrategy: "last", // Default strategy for keyword search
                 };
                 normalSearchPromise = this.index.search(
@@ -629,36 +654,35 @@ class GhostMeilisearchSearch {
 
                 const normalSearchParams = {
                     ...baseSearchParams,
-                    attributesToSearchOn: ["title", "plaintext", "excerpt"],
+                    attributesToSearchOn: normalAttributesToSearchOn, // Use derived + private
                 };
 
                 if (isExactMatch) {
-                    // Handle exact phrase search (existing logic)
+                    // Handle exact phrase search (existing logic, but search across all specified fields)
                     const searchPhrase = hasQuotes
                         ? query.slice(1, -1)
                         : exactPhrase;
                     normalSearchParams.matchingStrategy = "all"; // Use 'all' for initial fetch
 
-                    // Perform initial search and then filter manually
+                    // Perform initial search and then filter manually across searchable fields
                     normalSearchPromise = this.index
                         .search(searchPhrase, normalSearchParams)
                         .then((initialResults) => {
                             if (initialResults.hits.length > 0) {
                                 const lowerPhrase = searchPhrase.toLowerCase();
                                 const filteredHits = initialResults.hits.filter(
-                                    (hit) =>
-                                        (hit.title &&
-                                            hit.title
-                                                .toLowerCase()
-                                                .includes(lowerPhrase)) ||
-                                        (hit.plaintext &&
-                                            hit.plaintext
-                                                .toLowerCase()
-                                                .includes(lowerPhrase)) ||
-                                        (hit.excerpt &&
-                                            hit.excerpt
-                                                .toLowerCase()
-                                                .includes(lowerPhrase))
+                                    (hit) => {
+                                        // Check all searchable fields for the phrase
+                                        return normalAttributesToSearchOn.some(
+                                            (field) =>
+                                                hit[field] &&
+                                                typeof hit[field] ===
+                                                    "string" &&
+                                                hit[field]
+                                                    .toLowerCase()
+                                                    .includes(lowerPhrase)
+                                        );
+                                    }
                                 );
                                 // Return the structure MeiliSearch expects, with filtered hits
                                 return {
@@ -774,10 +798,10 @@ class GhostMeilisearchSearch {
      * @private
      */
     _createHitElement(hit, query) {
-        console.log("--- Processing Hit ---", JSON.stringify(hit)); // DEBUG: Log the raw hit
+        // console.log("--- Processing Hit ---", JSON.stringify(hit)); // DEBUG: Log the raw hit
         const li = document.createElement("li");
         const visibility = hit.visibility || "public"; // Default to public if missing
-        console.log("Determined visibility:", visibility); // DEBUG: Log determined visibility
+        // console.log("Determined visibility:", visibility); // DEBUG: Log determined visibility
 
         // --- Helper for basic highlighting ---
         const highlightText = (text, terms) => {
@@ -850,108 +874,120 @@ class GhostMeilisearchSearch {
         excerpt.classList.add("ms-result-excerpt");
         let excerptContent = "";
 
-        // --- Conditional Rendering based on Visibility ---
-        if (visibility === "public") {
-            // --- Public Post Rendering (Existing Logic) ---
-
-            // Title Highlighting (prefer _formatted)
-            const formattedTitle =
-                this.config.enableHighlighting &&
-                (hit._formatted?.title || hit._highlightResult?.title?.value);
-            if (formattedTitle) {
-                titleContent = formattedTitle;
-            } else {
-                // Fallback to basic highlight if _formatted not available
-                titleContent = highlightText(titleContent, queryTerms);
+        // --- Helper to generate snippet ---
+        const generateSnippet = (
+            textContent,
+            termsToHighlight,
+            phraseToHighlight
+        ) => {
+            if (!textContent) return "";
+            if (!this.config.enableHighlighting || !query) {
+                return (
+                    textContent.substring(0, 150) +
+                    (textContent.length > 150 ? "..." : "")
+                );
             }
 
-            // Excerpt Snippet Calculation and Highlighting
-            let textContent = hit.plaintext || hit.excerpt || "";
-            if (query && this.config.enableHighlighting) {
-                const exactPhrase = this.extractTextBetweenQuotes(query);
-                const hasQuotes = query.startsWith('"') && query.endsWith('"');
-                const phraseToHighlight =
-                    exactPhrase || (hasQuotes ? query.slice(1, -1) : null);
-                const wordsToHighlight = phraseToHighlight
-                    ? []
-                    : queryTerms.sort((a, b) => b.length - a.length);
+            let firstMatchPos = -1;
+            let matchLength = 0;
+            const lowerTextContent = textContent.toLowerCase();
 
-                let firstMatchPos = -1;
-                let matchLength = 0;
-                const lowerTextContent = textContent.toLowerCase();
-
-                if (phraseToHighlight) {
-                    const lowerPhrase = phraseToHighlight.toLowerCase();
-                    const pos = lowerTextContent.indexOf(lowerPhrase);
-                    if (pos !== -1) {
-                        firstMatchPos = pos;
-                        matchLength = phraseToHighlight.length;
-                    }
-                } else {
-                    for (const word of wordsToHighlight) {
-                        const lowerWord = word.toLowerCase();
-                        const pos = lowerTextContent.indexOf(lowerWord);
-                        if (
-                            pos !== -1 &&
-                            (firstMatchPos === -1 || pos < firstMatchPos)
-                        ) {
-                            firstMatchPos = pos;
-                            matchLength = word.length;
-                        }
-                    }
+            if (phraseToHighlight) {
+                const lowerPhrase = phraseToHighlight.toLowerCase();
+                const pos = lowerTextContent.indexOf(lowerPhrase);
+                if (pos !== -1) {
+                    firstMatchPos = pos;
+                    matchLength = phraseToHighlight.length;
                 }
-
-                let tempExcerpt = "";
-                if (firstMatchPos !== -1) {
-                    const snippetRadius = 60;
-                    const startPos = Math.max(0, firstMatchPos - snippetRadius);
-                    const endPos = Math.min(
-                        textContent.length,
-                        firstMatchPos + matchLength + snippetRadius
-                    );
-                    tempExcerpt = textContent.substring(startPos, endPos);
-                    if (startPos > 0) tempExcerpt = "..." + tempExcerpt;
-                    if (endPos < textContent.length)
-                        tempExcerpt = tempExcerpt + "...";
-                } else {
-                    tempExcerpt =
-                        textContent.substring(0, 150) +
-                        (textContent.length > 150 ? "..." : "");
-                }
-
-                excerptContent = tempExcerpt;
-                const termsToHighlight = phraseToHighlight
-                    ? [phraseToHighlight]
-                    : wordsToHighlight;
-                excerptContent = highlightText(
-                    excerptContent,
-                    termsToHighlight
-                ); // Use helper
             } else {
-                // Highlighting disabled or no query, use truncated content
-                excerptContent =
+                for (const word of termsToHighlight) {
+                    const lowerWord = word.toLowerCase();
+                    const pos = lowerTextContent.indexOf(lowerWord);
+                    if (
+                        pos !== -1 &&
+                        (firstMatchPos === -1 || pos < firstMatchPos)
+                    ) {
+                        firstMatchPos = pos;
+                        matchLength = word.length;
+                    }
+                }
+            }
+
+            let snippet = "";
+            if (firstMatchPos !== -1) {
+                const snippetRadius = 60;
+                const startPos = Math.max(0, firstMatchPos - snippetRadius);
+                const endPos = Math.min(
+                    textContent.length,
+                    firstMatchPos + matchLength + snippetRadius
+                );
+                snippet = textContent.substring(startPos, endPos);
+                if (startPos > 0) snippet = "..." + snippet;
+                if (endPos < textContent.length) snippet = snippet + "...";
+            } else {
+                snippet =
                     textContent.substring(0, 150) +
                     (textContent.length > 150 ? "..." : "");
             }
-        } else {
-            // --- Non-Public Post Rendering (Simpler Logic) ---
-            titleContent = hit.title || "Untitled";
-            // Use raw excerpt, fallback to truncated plaintext
-            // Use raw excerpt only, default to empty string if missing
-            excerptContent = hit.excerpt || "";
 
-            // Apply basic highlighting
+            const finalTerms = phraseToHighlight
+                ? [phraseToHighlight]
+                : termsToHighlight;
+            return highlightText(snippet, finalTerms);
+        };
+
+        // --- Conditional Rendering based on Visibility ---
+        const exactPhrase = this.extractTextBetweenQuotes(query);
+        const hasQuotes = query.startsWith('"') && query.endsWith('"');
+        const phraseToHighlight =
+            exactPhrase || (hasQuotes ? query.slice(1, -1) : null);
+        const wordsToHighlight = phraseToHighlight
+            ? []
+            : queryTerms.sort((a, b) => b.length - a.length);
+
+        // Title Highlighting (prefer _formatted, fallback to basic)
+        const formattedTitle =
+            this.config.enableHighlighting &&
+            (hit._formatted?.title || hit._highlightResult?.title?.value);
+        if (formattedTitle) {
+            titleContent = formattedTitle;
+        } else {
             titleContent = highlightText(titleContent, queryTerms);
-            // excerptContent = highlightText(excerptContent, queryTerms); // Skip highlighting excerpt for non-public
         }
-        console.log(
-            "Final excerptContent before setting HTML:",
-            excerptContent
-        ); // DEBUG: Log final excerpt content
+
+        if (visibility === "public") {
+            // --- Public Post Rendering ---
+            const textContent = hit.plaintext_public || hit.excerpt || "";
+            excerptContent = generateSnippet(
+                textContent,
+                wordsToHighlight,
+                phraseToHighlight
+            );
+        } else {
+            // --- Non-Public Post Rendering ---
+            // Check if there was a match in the public part
+            const hasPublicMatch =
+                hit._matchesInfo?.plaintext_public?.length > 0;
+
+            if (hasPublicMatch && this.config.enableHighlighting) {
+                // If match in public part, generate snippet from public part
+                const publicTextContent = hit.plaintext_public || "";
+                excerptContent = generateSnippet(
+                    publicTextContent,
+                    wordsToHighlight,
+                    phraseToHighlight
+                );
+            } else {
+                // Otherwise, show raw excerpt (no snippet/highlight from private)
+                excerptContent = hit.excerpt || "";
+                // No highlighting for excerpt in this case
+            }
+        }
+        // console.log("Final excerptContent before setting HTML:", excerptContent); // DEBUG
+
         // --- Set content (common logic) ---
         title.innerHTML = titleContent;
-        excerpt.innerHTML = excerptContent;
-        excerpt.innerHTML = excerptContent;
+        excerpt.innerHTML = excerptContent; // Use innerHTML to render highlights
 
         // --- Append elements (common logic) ---
         resultItem.appendChild(title);
