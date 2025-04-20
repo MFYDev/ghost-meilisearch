@@ -1,6 +1,6 @@
 {
     "name": "@fanyangmeng/ghost-meilisearch-cli",
-    "version": "1.2.2",
+    "version": "1.2.3",
     "description": "CLI tools for Ghost-Meilisearch integration",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -16,8 +16,8 @@
         "test": "jest"
     },
     "dependencies": {
-        "@fanyangmeng/ghost-meilisearch-config": "^1.2.2",
-        "@fanyangmeng/ghost-meilisearch-core": "^1.2.2",
+        "@fanyangmeng/ghost-meilisearch-config": "^1.2.3",
+        "@fanyangmeng/ghost-meilisearch-core": "^1.2.3",
         "chalk": "^5.3.0",
         "commander": "^11.1.0",
         "ora": "^7.0.1"

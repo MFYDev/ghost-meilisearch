@@ -13,7 +13,7 @@ const program = new Command();
 program
   .name('ghost-meilisearch')
   .description('CLI tools for Ghost-Meilisearch integration')
-  .version('1.2.2');
+  .version('1.2.3');
 
 // Add global options
 program
