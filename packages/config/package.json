@@ -1,6 +1,6 @@
 {
     "name": "@fanyangmeng/ghost-meilisearch-config",
-    "version": "1.2.3",
+    "version": "1.2.4",
     "description": "Configuration utilities for Ghost-Meilisearch integration",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",

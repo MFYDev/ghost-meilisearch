@@ -297,11 +297,13 @@ export class GhostMeilisearchManager {
     do {
       try {
         // Fetch posts for the current page using Admin API client
+        // Only fetch published posts to prevent draft leakage into search results
         const pageResponse = await this.ghost.posts.browse({
           limit: limit,
           page: currentPage,
           include: 'tags,authors',
-          formats: 'html,plaintext' // Request necessary formats
+          formats: 'html,plaintext', // Request necessary formats
+          filter: 'status:[published,sent]' // Index published and email-only posts
         });
 
         // Add posts from the current page response
